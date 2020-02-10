@@ -40,31 +40,10 @@ class PubsubServiceImpl implements PubsubService {
     private final static Logger LOGGER = Logger.getLogger("PubsubServiceImpl");
   LoadingCache<String, Publisher> publisherCache;
 
-  PubsubServiceImpl(LoadingCache<String, Publisher> publisherCache, Handler<AsyncResult<PubsubService>> readyHandler) {
-    this.publisherCache = publisherCache;
-
-    readyHandler.handle(Future.succeededFuture(this));
-    //this.sqlQueries = sqlQueries;
-
-    /*
-    dbClient.getConnection(ar -> {
-      if (ar.failed()) {
-        LOGGER.error("Could not open a database connection", ar.cause());
-        readyHandler.handle(Future.failedFuture(ar.cause()));
-      } else {
-        SQLConnection connection = ar.result();
-        connection.execute(sqlQueries.get(SqlQuery.CREATE_PAGES_TABLE), create -> {
-          connection.close();
-          if (create.failed()) {
-            LOGGER.error("Database preparation error", create.cause());
-            readyHandler.handle(Future.failedFuture(create.cause()));
-          } else {
-            readyHandler.handle(Future.succeededFuture(this));
-          }
-        });
-      }
-    });*/
-  }
+    PubsubServiceImpl(LoadingCache<String, Publisher> publisherCache, Handler<AsyncResult<PubsubService>> readyHandler) {
+        this.publisherCache = publisherCache;
+        readyHandler.handle(Future.succeededFuture(this));
+    }
 
 
 
