@@ -6,6 +6,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.logging.Logger;
+import io.vertx.core.CompositeFuture;
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 
@@ -44,8 +45,6 @@ class PubsubServiceImpl implements PubsubService {
         this.publisherCache = publisherCache;
         readyHandler.handle(Future.succeededFuture(this));
     }
-
-
 
     @Override
     public PubsubService publishMessage(String payload, String headers, String topic, Handler<AsyncResult<Void>> resultHandler) {
@@ -88,12 +87,31 @@ class PubsubServiceImpl implements PubsubService {
                 .setData(ByteString.copyFromUtf8(payload))
                 .build();
             LOGGER.info("apiGet publish start: " + System.currentTimeMillis());
-            ApiFutures.addCallback(publisherCache.get(topic).publish(pubsubMessage),
+            ApiFuture<String> topicFuture = publisherCache.get(topic).publish(pubsubMessage);
+            ApiFuture<String> backupFuture = publisherCache.get("tmp").publish(pubsubMessage);
+
+            ApiFutures.addCallback(topicFuture,
                 new ApiFutureCallback<String>() {
                     public void onSuccess(String messageId) {
                         LOGGER.info("apiGet publish success: " + System.currentTimeMillis());
                         System.out.println("published with message id: " + messageId);
-                        resultHandler.handle(Future.succeededFuture());
+                        try{
+                            ApiFutures.addCallback(backupFuture,
+                            new ApiFutureCallback<String>() {
+                                public void onSuccess(String messageId) {
+                                    LOGGER.info("apiGet publish success: " + System.currentTimeMillis());
+                                    System.out.println("published with message id: " + messageId);
+                                    resultHandler.handle(Future.succeededFuture());
+                                }
+                                public void onFailure(Throwable t) {
+                                    System.out.println("failed to publish: " + t);
+                                    resultHandler.handle(Future.failedFuture(t));    
+                                }
+                            }, MoreExecutors.directExecutor());
+                        }catch (Exception e) {
+                            //LOG.error("PubSubClient contextInitialized error ", e);
+                        }
+                        //resultHandler.handle(Future.succeededFuture());
                     }
                     public void onFailure(Throwable t) {
                         System.out.println("failed to publish: " + t);
@@ -105,16 +123,6 @@ class PubsubServiceImpl implements PubsubService {
             //LOG.error("PubSubClient contextInitialized error ", e);
         }
 
-    /*
-    JsonArray data = new JsonArray().add(title).add(markdown);
-    dbClient.updateWithParams(sqlQueries.get(SqlQuery.CREATE_PAGE), data, res -> {
-      if (res.succeeded()) {
-        resultHandler.handle(Future.succeededFuture());
-      } else {
-        LOGGER.error("Database query error", res.cause());
-        resultHandler.handle(Future.failedFuture(res.cause()));
-      }
-    });*/
     return this;
   }
 
