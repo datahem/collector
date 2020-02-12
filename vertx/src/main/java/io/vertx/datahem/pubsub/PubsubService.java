@@ -31,8 +31,8 @@ public interface PubsubService {
 
   // tag::create[]
   @GenIgnore
-  static PubsubService create(LoadingCache<String, Publisher> publisherCache, Handler<AsyncResult<PubsubService>> readyHandler) {
-    return new PubsubServiceImpl(publisherCache, readyHandler);
+  static PubsubService create(LoadingCache<String, Publisher> publisherCache, String backupTopic, Handler<AsyncResult<PubsubService>> readyHandler) {
+    return new PubsubServiceImpl(publisherCache, backupTopic, readyHandler);
   }
   // end::create[]
 

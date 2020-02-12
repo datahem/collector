@@ -1,0 +1,8 @@
+steps:
+- id: 'run collector'
+  name: 'gcr.io/${_PROJECT_ID}/vertx-webhook:${_VERSION}'
+  args: ['BACKUP_TOPIC=${_BACKUP_TOPIC}']
+timeout: 1200s
+substitutions:
+  _BACKUP_TOPIC: tmp
+  _VERSION: latest

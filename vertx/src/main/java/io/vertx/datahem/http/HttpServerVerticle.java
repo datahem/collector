@@ -16,6 +16,7 @@ import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
+import io.vertx.config.ConfigRetriever;
 
 
 import com.google.api.core.ApiFuture;
@@ -81,6 +82,9 @@ public class HttpServerVerticle extends AbstractVerticle {
     public void start(Promise<Void> promise) throws Exception {
         LOGGER.info("Creating vertx HTTP server: " + System.currentTimeMillis());
 
+        String pubsubQueue = config().getString(CONFIG_PUBSUB_QUEUE, "pubsub.queue");
+        pubsubService = PubsubService.createProxy(vertx, pubsubQueue);
+
         Set<String> allowedHeaders = new HashSet<>();
         allowedHeaders.add("x-requested-with");
         allowedHeaders.add("Access-Control-Allow-Origin");
@@ -93,6 +97,37 @@ public class HttpServerVerticle extends AbstractVerticle {
         allowedMethods.add(HttpMethod.POST);
         allowedMethods.add(HttpMethod.OPTIONS);
 
+        Router apiRouter = Router.router(vertx);
+        apiRouter.route().handler(CorsHandler.create("*").allowedHeaders(allowedHeaders).allowedMethods(allowedMethods));
+        apiRouter.route("/optimize/:mode/topic/:id").method(HttpMethod.GET).produces("text/*").produces("image/*").handler(this::apiGet);
+        apiRouter.post().handler(BodyHandler.create());
+        apiRouter.post("/optimize/:mode/topic/:id").handler(this::apiPost);
+
+        ConfigRetriever retriever = ConfigRetriever.create(vertx);
+        retriever.getConfig(
+            config -> {
+                if (config.failed()) {
+                    promise.fail(config.cause());
+                } else {
+                    vertx
+                        .createHttpServer()
+                        .requestHandler(apiRouter)
+                        .listen(config.result().getInteger("HTTP_PORT", 8080),
+                            ar -> {
+                                if (ar.succeeded()) {
+                                    LOGGER.info("HTTP server running on port: " + ar.result().actualPort());
+                                    promise.complete();
+                                } else {
+                                    LOGGER.info("Could not start a HTTP server: " + ar.cause().toString());
+                                    promise.fail(ar.cause());
+                                }
+                            }
+                        );
+                }
+            }
+        );
+
+/*
         String pubsubQueue = config().getString(CONFIG_PUBSUB_QUEUE, "pubsub.queue");
         pubsubService = PubsubService.createProxy(vertx, pubsubQueue);
         HttpServer server = vertx.createHttpServer();
@@ -100,7 +135,6 @@ public class HttpServerVerticle extends AbstractVerticle {
         Router apiRouter = Router.router(vertx);
         apiRouter.route().handler(CorsHandler.create("*").allowedHeaders(allowedHeaders).allowedMethods(allowedMethods));
         apiRouter.route("/optimize/:mode/topic/:id").method(HttpMethod.GET).produces("text/*").produces("image/*").handler(this::apiGet);
-        //apiRouter.get("/topic/:id").handler(this::apiGet);
         apiRouter.post().handler(BodyHandler.create());
         apiRouter.post("/optimize/:mode/topic/:id").handler(this::apiPost);
 
@@ -116,6 +150,7 @@ public class HttpServerVerticle extends AbstractVerticle {
                     promise.fail(ar.cause());
                 }
             });
+        */
     }
 
     private void apiPost(RoutingContext context) {
@@ -169,6 +204,7 @@ public class HttpServerVerticle extends AbstractVerticle {
             default:
                 Handler<AsyncResult<Void>> handler = reply -> {
                     if (reply.succeeded()) {
+                        LOGGER.info("apiGet handler succeeded: " + System.currentTimeMillis());
                         if(context.getAcceptableContentType().equals("image/*")){
                             context.response()
                             .putHeader("content-type", "image/gif")

@@ -32,23 +32,4 @@ public class MainVerticle extends AbstractVerticle {
         });
         LOGGER.info("MainVerticle started: " + System.currentTimeMillis());
     }
-
-    /*
-    @Override
-    public void start(Promise<Void> promise) throws Exception {  
-
-        Promise<String> deployHttpPromise = Promise.promise();
-        vertx.deployVerticle(
-            "io.vertx.starter.http.HttpServerVerticle",
-            new DeploymentOptions().setInstances(1),
-            deployHttpPromise);
-        Future<String> deployHttpFuture = deployHttpPromise.future();
-        deployHttpFuture.setHandler(ar -> {
-            if (ar.succeeded()) {
-                promise.complete();
-            } else {
-                promise.fail(ar.cause());
-            }
-        });
-    }*/
 }

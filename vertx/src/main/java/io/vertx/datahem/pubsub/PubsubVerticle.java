@@ -4,6 +4,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 //import io.vertx.core.json.JsonObject;
 import io.vertx.serviceproxy.ServiceBinder;
+import io.vertx.config.ConfigRetriever;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -81,7 +82,35 @@ public class PubsubVerticle extends AbstractVerticle {
 				.removalListener(removalListener)
 				.expireAfterAccess(60, TimeUnit.SECONDS)
 				.build(loader);
+            
+            ConfigRetriever retriever = ConfigRetriever.create(vertx);
+            retriever.getConfig(
+                config -> {
+                    if (config.failed()) {
+                        promise.fail(config.cause());
+                    } else {
+                        LOGGER.info("PubsubService.create BACKUP_TOPIC: " + config.result().getString("BACKUP_TOPIC"));
+                        PubsubService.create(publishers,
+                            config.result().getString("BACKUP_TOPIC", "tmp"), 
+                            ready -> {
+                                if (ready.succeeded()) {
+                                    LOGGER.info("PubsubService.create succeded: " + System.currentTimeMillis());
+                                    ServiceBinder binder = new ServiceBinder(vertx);
+                                    binder
+                                        .setAddress(CONFIG_PUBSUB_QUEUE)
+                                        .register(PubsubService.class, ready.result());
+                                    promise.complete();
+                                } else {
+                                    LOGGER.info("PubsubService.create fail: " + System.currentTimeMillis());
+                                    promise.fail(ready.cause());
+                                }
+                            }
+                        );
+                    }
+                }
+            );
 
+        /*
         PubsubService.create(publishers, ready -> {
             if (ready.succeeded()) {
                 LOGGER.info("PubsubService.create succeded: " + System.currentTimeMillis());
@@ -94,8 +123,8 @@ public class PubsubVerticle extends AbstractVerticle {
                 LOGGER.info("PubsubService.create fail: " + System.currentTimeMillis());
                 promise.fail(ready.cause());
             }
-        });
-        LOGGER.info("PubsubVerticle started: " + System.currentTimeMillis());
+        });*/
+        //LOGGER.info("PubsubVerticle started: " + System.currentTimeMillis());
     }
 }
 // end::dbverticle[]

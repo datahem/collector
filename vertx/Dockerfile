@@ -1,7 +1,6 @@
 FROM openjdk:8-jre-slim
-#FROM openjdk:8-jre-alpine
-#RUN apk update && apk add --no-cache gcompat
 ENV VERTICLE_FILE webhook-1.0-SNAPSHOT-fat.jar
+ENV BACKUP_TOPIC backup
 
 # Set the location of the verticles
 ENV VERTICLE_HOME /usr/verticles
@@ -14,4 +13,5 @@ COPY target/$VERTICLE_FILE $VERTICLE_HOME/
 # Launch the verticle
 WORKDIR $VERTICLE_HOME
 ENTRYPOINT ["sh", "-c"]
-CMD ["exec java -jar $VERTICLE_FILE"]   
+#CMD ["exec java -jar $VERTICLE_FILE"]
+CMD ["exec java -jar $VERTICLE_FILE -DBACKUP_TOPIC=$BACKUP_TOPIC"]

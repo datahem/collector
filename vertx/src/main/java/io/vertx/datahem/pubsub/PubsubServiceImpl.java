@@ -39,10 +39,13 @@ class PubsubServiceImpl implements PubsubService {
 
   //private static final Logger LOGGER = LoggerFactory.getLogger(WikiDatabaseServiceImpl.class);
     private final static Logger LOGGER = Logger.getLogger("PubsubServiceImpl");
-  LoadingCache<String, Publisher> publisherCache;
 
-    PubsubServiceImpl(LoadingCache<String, Publisher> publisherCache, Handler<AsyncResult<PubsubService>> readyHandler) {
+    LoadingCache<String, Publisher> publisherCache;
+    String backupTopic;
+
+    PubsubServiceImpl(LoadingCache<String, Publisher> publisherCache, String backupTopic, Handler<AsyncResult<PubsubService>> readyHandler) {
         this.publisherCache = publisherCache;
+        this.backupTopic = backupTopic;
         readyHandler.handle(Future.succeededFuture(this));
     }
 
@@ -88,7 +91,7 @@ class PubsubServiceImpl implements PubsubService {
                 .build();
             LOGGER.info("apiGet publish start: " + System.currentTimeMillis());
             ApiFuture<String> topicFuture = publisherCache.get(topic).publish(pubsubMessage);
-            ApiFuture<String> backupFuture = publisherCache.get("tmp").publish(pubsubMessage);
+            ApiFuture<String> backupFuture = publisherCache.get(backupTopic).publish(pubsubMessage);
 
             ApiFutures.addCallback(topicFuture,
                 new ApiFutureCallback<String>() {
