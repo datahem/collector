@@ -1,6 +1,13 @@
 
 package io.vertx.datahem.http;
 
+/*
+ * Copyright (c) 2020 Robert Sahlin
+ *
+ * Use of this software is governed by the Business Source License included
+ * in the LICENSE file.
+ */
+
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServer;
@@ -126,31 +133,6 @@ public class HttpServerVerticle extends AbstractVerticle {
                 }
             }
         );
-
-/*
-        String pubsubQueue = config().getString(CONFIG_PUBSUB_QUEUE, "pubsub.queue");
-        pubsubService = PubsubService.createProxy(vertx, pubsubQueue);
-        HttpServer server = vertx.createHttpServer();
-
-        Router apiRouter = Router.router(vertx);
-        apiRouter.route().handler(CorsHandler.create("*").allowedHeaders(allowedHeaders).allowedMethods(allowedMethods));
-        apiRouter.route("/optimize/:mode/topic/:id").method(HttpMethod.GET).produces("text/*").produces("image/*").handler(this::apiGet);
-        apiRouter.post().handler(BodyHandler.create());
-        apiRouter.post("/optimize/:mode/topic/:id").handler(this::apiPost);
-
-        int portNumber = config().getInteger(CONFIG_HTTP_SERVER_PORT, 8080);
-        server
-            .requestHandler(apiRouter)
-            .listen(portNumber, ar -> {
-                if (ar.succeeded()) {
-                    LOGGER.info("HTTP server running on port " + portNumber);
-                    promise.complete();
-                } else {
-                    LOGGER.info("Could not start a HTTP server: " + ar.cause().toString());
-                    promise.fail(ar.cause());
-                }
-            });
-        */
     }
 
     private void apiPost(RoutingContext context) {

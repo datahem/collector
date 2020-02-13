@@ -1,5 +1,12 @@
 package io.vertx.datahem.pubsub;
 
+/*
+ * Copyright (c) 2020 Robert Sahlin
+ *
+ * Use of this software is governed by the Business Source License included
+ * in the LICENSE file.
+ */
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;

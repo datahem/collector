@@ -1,3 +1,6 @@
+# Copyright (c) 2020 Robert Sahlin
+# Use of this software is governed by the Business Source License included in the LICENSE file.
+
 FROM openjdk:8-jre-slim
 ENV VERTICLE_FILE webhook-1.0-SNAPSHOT-fat.jar
 ENV BACKUP_TOPIC backup
