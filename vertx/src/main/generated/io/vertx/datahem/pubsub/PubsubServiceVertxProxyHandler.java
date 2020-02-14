@@ -41,6 +41,7 @@ import io.vertx.serviceproxy.ServiceException;
 import io.vertx.serviceproxy.ServiceExceptionMessageCodec;
 import io.vertx.serviceproxy.HelperUtils;
 
+import java.util.Map;
 import io.vertx.datahem.pubsub.PubsubService;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -116,7 +117,7 @@ public class PubsubServiceVertxProxyHandler extends ProxyHandler {
       switch (action) {
         case "publishMessage": {
           service.publishMessage((java.lang.String)json.getValue("payload"),
-                        (java.lang.String)json.getValue("headers"),
+                        HelperUtils.convertMap(json.getJsonObject("headers").getMap()),
                         (java.lang.String)json.getValue("topic"),
                         HelperUtils.createHandler(msg));
           break;

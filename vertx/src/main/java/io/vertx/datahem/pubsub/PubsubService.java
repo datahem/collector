@@ -16,10 +16,13 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.WebClient;
+import io.vertx.core.http.RequestOptions;
 
 import com.google.common.cache.LoadingCache;
 import com.google.cloud.pubsub.v1.Publisher;
 
+import java.util.Map;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -32,15 +35,20 @@ import java.util.logging.Logger;
 public interface PubsubService {
 
   @Fluent
-  PubsubService publishMessage(String payload, String headers, String topic, Handler<AsyncResult<Void>> resultHandler);
+  PubsubService publishMessage(String payload, Map<String,String>headers, String topic, Handler<AsyncResult<Void>> resultHandler);
 
   // end::interface[]
 
   // tag::create[]
-  @GenIgnore
-  static PubsubService create(LoadingCache<String, Publisher> publisherCache, String backupTopic, Handler<AsyncResult<PubsubService>> readyHandler) {
-    return new PubsubServiceImpl(publisherCache, backupTopic, readyHandler);
-  }
+    @GenIgnore
+    static PubsubService create(
+        LoadingCache<String, Publisher> publisherCache, 
+        String backupTopic,
+        WebClient client,
+        RequestOptions requestOptions, 
+        Handler<AsyncResult<PubsubService>> readyHandler) {
+            return new PubsubServiceImpl(publisherCache, backupTopic, client, requestOptions, readyHandler);
+        }
   // end::create[]
 
   // tag::proxy[]

@@ -29,9 +29,10 @@ import com.google.cloud.pubsub.v1.Publisher;
 import com.google.pubsub.v1.ProjectTopicName;
 import java.util.concurrent.TimeUnit;
 import com.google.cloud.ServiceOptions;
+import io.vertx.ext.web.client.WebClient;
+import io.vertx.core.http.RequestOptions;
 
 
-// tag::dbverticle[]
 public class PubsubVerticle extends AbstractVerticle {
 
     public static final String CONFIG_PUBSUB_QUEUE = "pubsub.queue";
@@ -39,6 +40,8 @@ public class PubsubVerticle extends AbstractVerticle {
     private static LoadingCache<String, Publisher> publishers;
     private static CacheLoader<String, Publisher> loader;
     private static RemovalListener<String, Publisher> removalListener;
+    private WebClient client;
+    private RequestOptions requestOptions = new RequestOptions();
     private final static Logger LOGGER = Logger.getLogger("PubsubVerticle");
 
   @Override
@@ -90,25 +93,44 @@ public class PubsubVerticle extends AbstractVerticle {
 				.expireAfterAccess(60, TimeUnit.SECONDS)
 				.build(loader);
             
+            client = WebClient.create(vertx);
+
             ConfigRetriever retriever = ConfigRetriever.create(vertx);
             retriever.getConfig(
                 config -> {
                     if (config.failed()) {
                         promise.fail(config.cause());
                     } else {
-                        LOGGER.info("PubsubService.create BACKUP_TOPIC: " + config.result().getString("BACKUP_TOPIC"));
+                        /*
+                        String host = config.result().getString("HOST", "8080-dot-3511156-dot-devshell.appspot.com");
+                        LOGGER.info("HOST: " + host);
+                        int port = config.result().getInteger("PORT", 8080);
+                        LOGGER.info("PORT: " + port);
+                        String uri = config.result().getString("URI", "/optimize/default/topic/tmp");
+                        LOGGER.info("URI: " + uri);*/
+                        //requestOptions.setHost(host);
+                            //.setSsl(true)
+                            //.setPort(port)
+                            //.setURI(uri);
+                        //LOGGER.info("PubsubService.create BACKUP_TOPIC: " + config.result().getString("BACKUP_TOPIC"));
                         PubsubService.create(publishers,
-                            config.result().getString("BACKUP_TOPIC", "tmp"), 
+                            config.result().getString("BACKUP_TOPIC", "tmp"),
+                            client,
+                            requestOptions
+                                .setHost(config.result().getString("HOST", "8080-dot-3511156-dot-devshell.appspot.com"))
+                                .setSsl(true)
+                                .setPort(config.result().getInteger("PORT", 8080))
+                                .setURI(config.result().getString("URI", "/optimize/default/topic/tmp")),
                             ready -> {
                                 if (ready.succeeded()) {
-                                    LOGGER.info("PubsubService.create succeded: " + System.currentTimeMillis());
+                                    //LOGGER.info("PubsubService.create succeded: " + System.currentTimeMillis());
                                     ServiceBinder binder = new ServiceBinder(vertx);
                                     binder
                                         .setAddress(CONFIG_PUBSUB_QUEUE)
                                         .register(PubsubService.class, ready.result());
                                     promise.complete();
                                 } else {
-                                    LOGGER.info("PubsubService.create fail: " + System.currentTimeMillis());
+                                    //LOGGER.info("PubsubService.create fail: " + System.currentTimeMillis());
                                     promise.fail(ready.cause());
                                 }
                             }
@@ -116,22 +138,5 @@ public class PubsubVerticle extends AbstractVerticle {
                     }
                 }
             );
-
-        /*
-        PubsubService.create(publishers, ready -> {
-            if (ready.succeeded()) {
-                LOGGER.info("PubsubService.create succeded: " + System.currentTimeMillis());
-                ServiceBinder binder = new ServiceBinder(vertx);
-                binder
-                    .setAddress(CONFIG_PUBSUB_QUEUE)
-                    .register(PubsubService.class, ready.result());
-                promise.complete();
-            } else {
-                LOGGER.info("PubsubService.create fail: " + System.currentTimeMillis());
-                promise.fail(ready.cause());
-            }
-        });*/
-        //LOGGER.info("PubsubVerticle started: " + System.currentTimeMillis());
     }
 }
-// end::dbverticle[]

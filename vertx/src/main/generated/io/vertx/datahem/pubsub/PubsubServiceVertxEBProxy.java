@@ -33,6 +33,7 @@ import io.vertx.serviceproxy.ServiceException;
 import io.vertx.serviceproxy.ServiceExceptionMessageCodec;
 import io.vertx.serviceproxy.ProxyUtils;
 
+import java.util.Map;
 import io.vertx.datahem.pubsub.PubsubService;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -62,14 +63,14 @@ public class PubsubServiceVertxEBProxy implements PubsubService {
   }
 
   @Override
-  public  PubsubService publishMessage(String payload, String headers, String topic, Handler<AsyncResult<Void>> resultHandler){
+  public  PubsubService publishMessage(String payload, Map<String,String> headers, String topic, Handler<AsyncResult<Void>> resultHandler){
     if (closed) {
       resultHandler.handle(Future.failedFuture(new IllegalStateException("Proxy is closed")));
       return this;
     }
     JsonObject _json = new JsonObject();
     _json.put("payload", payload);
-    _json.put("headers", headers);
+    _json.put("headers", new JsonObject(ProxyUtils.convertMap(headers)));
     _json.put("topic", topic);
 
     DeliveryOptions _deliveryOptions = (_options != null) ? new DeliveryOptions(_options) : new DeliveryOptions();

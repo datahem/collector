@@ -12,14 +12,16 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.datahem.pubsub.PubsubVerticle;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MainVerticle extends AbstractVerticle {
 
-    private final static Logger LOGGER = Logger.getLogger("MainVerticle");
+    private final static Logger LOGGER = LoggerFactory.getLogger("MainVerticle.class");
 
     @Override
     public void start(Promise<Void> promise) throws Exception { 
+        LOGGER.info("MainVerticle deployed");
         Promise<String> pubsubVerticleDeployment = Promise.promise();
         vertx.deployVerticle(new PubsubVerticle(), pubsubVerticleDeployment);
 
@@ -32,11 +34,13 @@ public class MainVerticle extends AbstractVerticle {
             return httpVerticleDeployment.future();
         }).setHandler(ar -> {
             if (ar.succeeded()) {
+                LOGGER.info("PubsubVerticle deployed");
                 promise.complete();
             } else {
+                LOGGER.error("PubsubVerticle failed to deploy");
                 promise.fail(ar.cause());
             }
         });
-        LOGGER.info("MainVerticle started: " + System.currentTimeMillis());
+        
     }
 }
