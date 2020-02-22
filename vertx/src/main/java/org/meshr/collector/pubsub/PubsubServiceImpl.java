@@ -15,6 +15,7 @@ import io.vertx.core.json.JsonObject;
 //import java.util.logging.Logger;
 import io.vertx.core.CompositeFuture;
 import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.HttpMethod;
 import org.slf4j.Logger;
@@ -124,6 +125,7 @@ class PubsubServiceImpl implements PubsubService {
                         .build()
                     )*/
                     .setData(ByteString.copyFromUtf8(payload))
+                    //.setData(ByteString.copyFromUtf8("hello"))
                 .build();
             //LOGGER.info("apiGet publish start: " + System.currentTimeMillis());
             ApiFuture<String> topicFuture = publisherCache.get(topic).publish(pubsubMessage);
@@ -172,19 +174,25 @@ class PubsubServiceImpl implements PubsubService {
             LOGGER.info("projectId: " + projectId );
             LOGGER.info("requestoptions: " + requestOptions.toJson().toString() );
             client
-                .request(HttpMethod.POST,requestOptions)
-                //.addQueryParam("package", "io.vertx.datahem.pubsub")
+                //.request(HttpMethod.POST,requestOptions)
+                //.request(HttpMethod.GET,requestOptions)
+                .get(80, jsconfig.getString("HOST"), jsconfig.getString("HOST_URI"))
+                .addQueryParam("package", "io.vertx.datahem.pubsub")
                 //.addQueryParam("project", ServiceOptions.getDefaultProjectId())
-                //.send(ar -> {
-                .sendJsonObject(new JsonObject()
-                    .put("projectID", projectId)
-                    .put("package", "org.meshr.collector.vertx.pubsub")
-                    .put("version", jsconfig.getString("VERSION")), ar -> {
-                    if (ar.succeeded()) {
-                        LOGGER.info("Keep alive response status code" + ar.result().statusCode());
-                    }else {
-                        LOGGER.error("Something went wrong " + ar.cause().getMessage());
-                    }
+                .send(ar -> {
+                //.putHeader("Content-Type", "application/json")
+                //.as(BodyCodec.jsonObject())
+                //.sendJsonObject(new JsonObject()
+                  //  .put("projectID", "projectId")
+                    //.put("package", "org.meshr.collector.vertx.pubsub")
+                    //.put("version", jsconfig.getString("VERSION"))
+                    //, ar -> {
+                        if (ar.succeeded()) {
+                            LOGGER.info("Keep alive response status code " + ar.result().statusCode());
+                            LOGGER.info("Keep alive response status code " + ar.result().statusMessage());
+                        }else {
+                            LOGGER.error("Something went wrong " + ar.cause().getMessage());
+                        }
                 });
         }
     }

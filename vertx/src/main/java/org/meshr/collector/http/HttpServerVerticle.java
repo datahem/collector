@@ -155,12 +155,12 @@ public class HttpServerVerticle extends AbstractVerticle {
     private void apiPost(RoutingContext context) {
         
         Map<String,String> headers = getHeadersAsMap(context.request().headers());
-        String payload = context.getBodyAsString();
+        String payload = "hello"; //context.getBodyAsString();
         String topic = String.valueOf(context.request().getParam("id"));
         String mode = String.valueOf(context.request().getParam("mode"));
-        
+        LOGGER.info("Payload: " + payload);
         switch(mode){
-            case "latency":
+            case "latencyd":
                 pubsubService.publishMessage(payload, headers, topic, latencyHandler);
                 context.response().setStatusCode(204).end();
                 break;

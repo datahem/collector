@@ -28,7 +28,7 @@ public class MainVerticle extends AbstractVerticle {
         pubsubVerticleDeployment.future().compose(id -> {
             Promise<String> httpVerticleDeployment = Promise.promise();
             vertx.deployVerticle(
-                "io.vertx.datahem.http.HttpServerVerticle",
+                "org.meshr.collector.vertx.http.HttpServerVerticle",
                 new DeploymentOptions().setInstances(1),
             httpVerticleDeployment);
             return httpVerticleDeployment.future();

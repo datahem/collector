@@ -94,7 +94,7 @@ public class PubsubVerticle extends AbstractVerticle {
 				.newBuilder()
 				.maximumSize(1000)
 				.removalListener(removalListener)
-				.expireAfterAccess(600, TimeUnit.SECONDS)
+				.expireAfterAccess(60, TimeUnit.SECONDS)
 				.build(loader);
             
             client = WebClient.create(vertx);

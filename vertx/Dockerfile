@@ -2,7 +2,7 @@
 # Use of this software is governed by the Business Source License included in the LICENSE file.
 
 FROM openjdk:8-jre-slim
-ENV VERTICLE_FILE webhook-1.0-SNAPSHOT-fat.jar
+ENV VERTICLE_FILE collector.vertx-1.0-SNAPSHOT-fat.jar
 ENV BACKUP_TOPIC backup
 
 # Set the location of the verticles
