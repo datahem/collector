@@ -40,13 +40,20 @@ public interface PubsubService {
     @GenIgnore
     static PubsubService create(
         LoadingCache<String, Publisher> publisherCache, 
-        String backupTopic,
+        //String backupTopic,
         JsonObject jsconfig,
-        String projectId,
+        //String projectId,
         WebClient client,
-        RequestOptions requestOptions, 
+        //RequestOptions requestOptions, 
         Handler<AsyncResult<PubsubService>> readyHandler) {
-            return new PubsubServiceImpl(publisherCache, backupTopic, jsconfig, projectId, client, requestOptions, readyHandler);
+            return new PubsubServiceImpl(
+                publisherCache, 
+                //backupTopic, 
+                jsconfig, 
+                //projectId, 
+                client, 
+                //requestOptions, 
+                readyHandler);
         }
   // end::create[]
 

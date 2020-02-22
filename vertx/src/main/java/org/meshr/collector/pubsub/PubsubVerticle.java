@@ -119,18 +119,26 @@ public class PubsubVerticle extends AbstractVerticle {
                         //LOGGER.info("PubsubService.create BACKUP_TOPIC: " + config.result().getString("BACKUP_TOPIC"));
                         JsonObject jsconfig = new JsonObject();
                         jsconfig.put("foo","bar");
+                        jsconfig.put("BACKUP_TOPIC",config.result().getString("BACKUP_TOPIC", "tmp"));
+                        jsconfig.put("HOST", config.result().getString("HOST", "8080-dot-3511156-dot-devshell.appspot.com"));
+                        jsconfig.put("HOST_PORT", config.result().getInteger("HOST_PORT", 8080));
+                        jsconfig.put("HOST_URI", config.result().getString("HOST_URI", "/optimize/default/topic/tmp"));
+                        jsconfig.put("FREQUENCY", config.result().getInteger("FREQUENCY", 100000));
+                        jsconfig.put("PROJECT_ID", PROJECT_ID);
+                        jsconfig.put("VERSION", config.result().getString("VERSION", "0.9.0"));
 
                         PubsubService.create(
                             publishers,
-                            config.result().getString("BACKUP_TOPIC", "tmp"),
+                            //config.result().getString("BACKUP_TOPIC", "tmp"),
                             jsconfig,
-                            PROJECT_ID,
+                            //PROJECT_ID,
                             client,
+                            /*
                             requestOptions
                                 .setHost(config.result().getString("HOST", "8080-dot-3511156-dot-devshell.appspot.com"))
                                 //.setSsl(true)
                                 .setPort(config.result().getInteger("PORT", 8080))
-                                .setURI(config.result().getString("URI", "/optimize/default/topic/tmp")),
+                                .setURI(config.result().getString("URI", "/optimize/default/topic/tmp")),*/
                             ready -> {
                                 if (ready.succeeded()) {
                                     //LOGGER.info("PubsubService.create succeded: " + System.currentTimeMillis());

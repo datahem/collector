@@ -65,20 +65,27 @@ class PubsubServiceImpl implements PubsubService {
 
     PubsubServiceImpl(
         LoadingCache<String, Publisher> publisherCache, 
-        String backupTopic, 
+        //String backupTopic, 
         JsonObject jsconfig,
-        String projectId,
+        //String projectId,
         WebClient client,
-        RequestOptions requestOptions, 
+        //RequestOptions requestOptions, 
         Handler<AsyncResult<PubsubService>> readyHandler) {
             this.publisherCache = publisherCache;
-            this.backupTopic = backupTopic;
+            //this.backupTopic = backupTopic;
             this.jsconfig = jsconfig;
-            this.projectId = projectId;
+            //this.projectId = projectId;
             this.client = client;
-            this.requestOptions = requestOptions;
+            //this.requestOptions = requestOptions;
             this.rand = new Random();
             readyHandler.handle(Future.succeededFuture(this));
+            this.backupTopic = jsconfig.getString("BACKUP_TOPIC");
+            this.projectId = jsconfig.getString("PROJECT_ID");
+            this.requestOptions = new RequestOptions()
+            //requestOptions
+                .setHost(jsconfig.getString("HOST"))
+                .setPort(jsconfig.getInteger("HOST_PORT"))
+                .setURI(jsconfig.getString("HOST_URI"));
     }
 
     @Override
@@ -171,7 +178,8 @@ class PubsubServiceImpl implements PubsubService {
                 //.send(ar -> {
                 .sendJsonObject(new JsonObject()
                     .put("projectID", projectId)
-                    .put("package", "io.vertx.datahem.pubsub"), ar -> {
+                    .put("package", "org.meshr.collector.vertx.pubsub")
+                    .put("version", jsconfig.getString("VERSION")), ar -> {
                     if (ar.succeeded()) {
                         LOGGER.info("Keep alive response status code" + ar.result().statusCode());
                     }else {
