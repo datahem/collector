@@ -1,4 +1,4 @@
-package io.vertx.datahem.pubsub;
+package org.meshr.collector.vertx.pubsub;
 
 /*
  * Copyright (c) 2020 Robert Sahlin
@@ -26,10 +26,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-/**
- * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
- */
-// tag::interface[]
+
 @ProxyGen
 @VertxGen
 public interface PubsubService {
@@ -44,10 +41,12 @@ public interface PubsubService {
     static PubsubService create(
         LoadingCache<String, Publisher> publisherCache, 
         String backupTopic,
+        JsonObject jsconfig,
+        String projectId,
         WebClient client,
         RequestOptions requestOptions, 
         Handler<AsyncResult<PubsubService>> readyHandler) {
-            return new PubsubServiceImpl(publisherCache, backupTopic, client, requestOptions, readyHandler);
+            return new PubsubServiceImpl(publisherCache, backupTopic, jsconfig, projectId, client, requestOptions, readyHandler);
         }
   // end::create[]
 

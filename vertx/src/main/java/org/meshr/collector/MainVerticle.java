@@ -1,4 +1,4 @@
-package io.vertx.datahem;
+package org.meshr.collector.vertx;
 
 /*
  * Copyright (c) 2020 Robert Sahlin
@@ -11,7 +11,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.datahem.pubsub.PubsubVerticle;
+import org.meshr.collector.vertx.pubsub.PubsubVerticle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

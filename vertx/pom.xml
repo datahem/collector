@@ -5,13 +5,13 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.datahem.collector</groupId>
-  <artifactId>webhook</artifactId>
+  <groupId>org.meshr.collector</groupId>
+  <artifactId>vertx</artifactId>
   <version>1.0-SNAPSHOT</version>
 
   <properties>
     <vertx.version>3.8.3</vertx.version>
-    <main.verticle>io.vertx.datahem.MainVerticle</main.verticle>
+    <main.verticle>org.meshr.collector.vertx.MainVerticle</main.verticle>
   </properties>
 
   <dependencyManagement>

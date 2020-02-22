@@ -1,5 +1,4 @@
-
-package io.vertx.datahem.http;
+package org.meshr.collector.vertx.http;
 
 /*
  * Copyright (c) 2020 Robert Sahlin
@@ -41,7 +40,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
-import io.vertx.datahem.pubsub.PubsubService;
+import org.meshr.collector.vertx.pubsub.PubsubService;
 
 import com.google.common.collect.Multimap;
 import java.util.Date;
@@ -109,10 +108,23 @@ public class HttpServerVerticle extends AbstractVerticle {
         allowedMethods.add(HttpMethod.OPTIONS);
 
         Router apiRouter = Router.router(vertx);
-        apiRouter.route().handler(CorsHandler.create("*").allowedHeaders(allowedHeaders).allowedMethods(allowedMethods));
-        apiRouter.route("/optimize/:mode/topic/:id").method(HttpMethod.GET).produces("text/*").produces("image/*").handler(this::apiGet);
-        apiRouter.post().handler(BodyHandler.create());
-        apiRouter.post("/optimize/:mode/topic/:id").handler(this::apiPost);
+        apiRouter
+            .route()
+            .handler(CorsHandler.create("*")
+            .allowedHeaders(allowedHeaders)
+            .allowedMethods(allowedMethods));
+        apiRouter
+            .route("/optimize/:mode/topic/:id")
+            .method(HttpMethod.GET)
+            .produces("text/*")
+            .produces("image/*")
+            .handler(this::apiGet);
+        apiRouter
+            .post()
+            .handler(BodyHandler.create());
+        apiRouter
+            .post("/optimize/:mode/topic/:id")
+            .handler(this::apiPost);
 
         ConfigRetriever retriever = ConfigRetriever.create(vertx);
         retriever.getConfig(

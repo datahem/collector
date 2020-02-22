@@ -14,7 +14,7 @@
 * under the License.
 */
 
-package io.vertx.datahem.pubsub;
+package org.meshr.collector.vertx.pubsub;
 
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.Vertx;
@@ -34,7 +34,7 @@ import io.vertx.serviceproxy.ServiceExceptionMessageCodec;
 import io.vertx.serviceproxy.ProxyUtils;
 
 import java.util.Map;
-import io.vertx.datahem.pubsub.PubsubService;
+import org.meshr.collector.vertx.pubsub.PubsubService;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 /*

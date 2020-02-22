@@ -5,7 +5,7 @@
  * in the LICENSE file.
  */
 
-@ModuleGen(groupPackage = "io.vertx.datahem.pubsub", name = "pubsub")
-package io.vertx.datahem.pubsub;
+@ModuleGen(groupPackage = "org.meshr.collector.vertx.pubsub", name = "pubsub")
+package org.meshr.collector.vertx.pubsub;
 
 import io.vertx.codegen.annotations.ModuleGen;

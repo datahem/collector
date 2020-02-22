@@ -1,4 +1,4 @@
-package io.vertx.datahem.pubsub;
+package org.meshr.collector.vertx.pubsub;
 
 /*
  * Copyright (c) 2020 Robert Sahlin
@@ -19,6 +19,7 @@ import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.HttpMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.google.cloud.ServiceOptions;
 
 import com.google.common.cache.LoadingCache;
 import com.google.cloud.pubsub.v1.Publisher;
@@ -30,8 +31,9 @@ import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
 import java.util.UUID;
 import com.google.common.collect.ImmutableMap;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+//import org.joda.time.DateTime;
+//import org.joda.time.DateTimeZone;
+import java.time.Instant;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
@@ -50,10 +52,13 @@ import com.google.pubsub.v1.PubsubMessage;
 class PubsubServiceImpl implements PubsubService {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(PubsubServiceImpl.class);
+    private static final String PROJECT_ID = ServiceOptions.getDefaultProjectId();
     //private final static Logger LOGGER = Logger.getLogger("PubsubServiceImpl");
 
     LoadingCache<String, Publisher> publisherCache;
     String backupTopic;
+    JsonObject jsconfig;
+    String projectId;
     WebClient client;
     RequestOptions requestOptions;
     Random rand;
@@ -61,11 +66,15 @@ class PubsubServiceImpl implements PubsubService {
     PubsubServiceImpl(
         LoadingCache<String, Publisher> publisherCache, 
         String backupTopic, 
+        JsonObject jsconfig,
+        String projectId,
         WebClient client,
         RequestOptions requestOptions, 
         Handler<AsyncResult<PubsubService>> readyHandler) {
             this.publisherCache = publisherCache;
             this.backupTopic = backupTopic;
+            this.jsconfig = jsconfig;
+            this.projectId = projectId;
             this.client = client;
             this.requestOptions = requestOptions;
             this.rand = new Random();
@@ -77,6 +86,8 @@ class PubsubServiceImpl implements PubsubService {
         //LOGGER.info("PubsubService.publishMessage: " + System.currentTimeMillis());
         String uuid = UUID.randomUUID().toString();
         //LOGGER.info("PubsubService.publishMessage: " + headers.toString());
+        LOGGER.info("topic: " + topic);
+        
         
         try{
             String ip = headers.getOrDefault("x-forwarded-for", "").split(",")[0];
@@ -96,15 +107,16 @@ class PubsubServiceImpl implements PubsubService {
         
         try {
             PubsubMessage pubsubMessage = PubsubMessage.newBuilder()
-			    .putAllAttributes(
+			    /*.putAllAttributes(
                     ImmutableMap.<String, String>builder()
                         .putAll(headers)
-                        .put("timestamp", new DateTime(DateTimeZone.UTC).toString())
+                        //.put("timestamp", new DateTime(DateTimeZone.UTC).toString())
+                        //.put("timestamp", Instant.now().toString())
                         .put("source", topic)
                         .put("uuid", uuid)
                         .build()
-                    )
-                .setData(ByteString.copyFromUtf8(payload))
+                    )*/
+                    .setData(ByteString.copyFromUtf8(payload))
                 .build();
             //LOGGER.info("apiGet publish start: " + System.currentTimeMillis());
             ApiFuture<String> topicFuture = publisherCache.get(topic).publish(pubsubMessage);
@@ -140,22 +152,30 @@ class PubsubServiceImpl implements PubsubService {
             }, MoreExecutors.directExecutor());
 
         } catch (Exception e) {
-            //LOG.error("PubSubClient contextInitialized error ", e);
+            LOGGER.error("PubSubClient contextInitialized error ", e);
         }
-        ping();
+        keepAlive();
     return this;
   }
 
-    private void ping(){
+    private void keepAlive(){
         LOGGER.info("Enter ping()");
         if(rand.nextInt(2)==0){ 
             LOGGER.info("Pinging");
+            LOGGER.info("projectId: " + projectId );
+            LOGGER.info("requestoptions: " + requestOptions.toJson().toString() );
             client
-                .request(HttpMethod.GET,requestOptions)
-                .addQueryParam("param", "param_value")
-                .send(ar -> {
+                .request(HttpMethod.POST,requestOptions)
+                //.addQueryParam("package", "io.vertx.datahem.pubsub")
+                //.addQueryParam("project", ServiceOptions.getDefaultProjectId())
+                //.send(ar -> {
+                .sendJsonObject(new JsonObject()
+                    .put("projectID", projectId)
+                    .put("package", "io.vertx.datahem.pubsub"), ar -> {
                     if (ar.succeeded()) {
-                        System.out.println("Received response with status code" + ar.result().statusCode());
+                        LOGGER.info("Keep alive response status code" + ar.result().statusCode());
+                    }else {
+                        LOGGER.error("Something went wrong " + ar.cause().getMessage());
                     }
                 });
         }

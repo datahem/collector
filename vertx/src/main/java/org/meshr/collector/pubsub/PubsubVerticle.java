@@ -1,4 +1,4 @@
-package io.vertx.datahem.pubsub;
+package org.meshr.collector.vertx.pubsub;
 
 /*
  * Copyright (c) 2020 Robert Sahlin
@@ -12,6 +12,7 @@ import io.vertx.core.Promise;
 //import io.vertx.core.json.JsonObject;
 import io.vertx.serviceproxy.ServiceBinder;
 import io.vertx.config.ConfigRetriever;
+import io.vertx.core.json.JsonObject;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -46,19 +47,22 @@ public class PubsubVerticle extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> promise) throws Exception {
+      LOGGER.info(PROJECT_ID);
 
       loader = new CacheLoader<String, Publisher>() {
 				@Override
 				public Publisher load(String pubSubTopicId) {
 					Publisher publisher = null;
 					try{
+                        LOGGER.info("PROJECT_ID: " + PROJECT_ID);
+                        LOGGER.info("pubSubTopicID: " + pubSubTopicId);
 						ProjectTopicName topic = ProjectTopicName.of(PROJECT_ID, pubSubTopicId);
 						publisher = Publisher
 							.newBuilder(topic)
 							.build();
 						LOGGER.info("Cache load: " + publisher.getTopicNameString() + ", ref: " + publisher.toString());
 					}catch (Exception e) {
-						//LOGGER.info("PubSubClient Connect load error ", e);
+						LOGGER.info("PubSubClient Connect load error " + e.toString());
 					}
 					return publisher;
 				}
@@ -75,7 +79,7 @@ public class PubsubVerticle extends AbstractVerticle {
                             try{
                                 publisher.awaitTermination(1, TimeUnit.SECONDS);
                             }catch(Exception e){
-                                //LOGGER.info("PubSubClient Connect load error ", e);
+                                LOGGER.info("PubSubClient Connect load error " + e);
                             }    
                             promise.complete("");
                         }, 
@@ -90,7 +94,7 @@ public class PubsubVerticle extends AbstractVerticle {
 				.newBuilder()
 				.maximumSize(1000)
 				.removalListener(removalListener)
-				.expireAfterAccess(60, TimeUnit.SECONDS)
+				.expireAfterAccess(600, TimeUnit.SECONDS)
 				.build(loader);
             
             client = WebClient.create(vertx);
@@ -113,12 +117,18 @@ public class PubsubVerticle extends AbstractVerticle {
                             //.setPort(port)
                             //.setURI(uri);
                         //LOGGER.info("PubsubService.create BACKUP_TOPIC: " + config.result().getString("BACKUP_TOPIC"));
-                        PubsubService.create(publishers,
+                        JsonObject jsconfig = new JsonObject();
+                        jsconfig.put("foo","bar");
+
+                        PubsubService.create(
+                            publishers,
                             config.result().getString("BACKUP_TOPIC", "tmp"),
+                            jsconfig,
+                            PROJECT_ID,
                             client,
                             requestOptions
                                 .setHost(config.result().getString("HOST", "8080-dot-3511156-dot-devshell.appspot.com"))
-                                .setSsl(true)
+                                //.setSsl(true)
                                 .setPort(config.result().getInteger("PORT", 8080))
                                 .setURI(config.result().getString("URI", "/optimize/default/topic/tmp")),
                             ready -> {
