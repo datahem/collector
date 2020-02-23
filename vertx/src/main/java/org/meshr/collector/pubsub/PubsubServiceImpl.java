@@ -176,20 +176,23 @@ class PubsubServiceImpl implements PubsubService {
             client
                 //.request(HttpMethod.POST,requestOptions)
                 //.request(HttpMethod.GET,requestOptions)
-                .get(80, jsconfig.getString("HOST"), jsconfig.getString("HOST_URI"))
-                .addQueryParam("package", "io.vertx.datahem.pubsub")
+                //.get(80, jsconfig.getString("HOST"), jsconfig.getString("HOST_URI"))
+                //.addQueryParam("package", "io.vertx.datahem.pubsub")
                 //.addQueryParam("project", ServiceOptions.getDefaultProjectId())
-                .send(ar -> {
-                //.putHeader("Content-Type", "application/json")
-                //.as(BodyCodec.jsonObject())
-                //.sendJsonObject(new JsonObject()
-                  //  .put("projectID", "projectId")
-                    //.put("package", "org.meshr.collector.vertx.pubsub")
+                //.send(ar -> {
+                .post(jsconfig.getString("HOST_PORT"), jsconfig.getString("HOST"), jsconfig.getString("HOST_URI"))
+                .ssl(true)
+                .putHeader("Content-Type", "application/json")
+                .as(BodyCodec.jsonObject())
+                .sendJsonObject(new JsonObject()
+                    .put("projectID", "projectId")
+                    .put("package", "org.meshr.collector.vertx.pubsub")
                     //.put("version", jsconfig.getString("VERSION"))
-                    //, ar -> {
-                        if (ar.succeeded()) {
+                    , ar -> {
+                        if(ar.succeeded()) {
                             LOGGER.info("Keep alive response status code " + ar.result().statusCode());
                             LOGGER.info("Keep alive response status code " + ar.result().statusMessage());
+                            LOGGER.info("Keep alive response Location header " + ar.result().getHeader("Location"));
                         }else {
                             LOGGER.error("Something went wrong " + ar.cause().getMessage());
                         }

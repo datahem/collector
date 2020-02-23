@@ -79,13 +79,6 @@ public class HttpServerVerticle extends AbstractVerticle {
     private final static byte[] trackingGif = { 0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x1, 0x0, 0x1, 0x0, (byte) 0x80, 0x0, 0x0,
             (byte) 0xff, (byte) 0xff, (byte) 0xff, 0x0, 0x0, 0x0, 0x2c, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x1, 0x0,
             0x0, 0x2, 0x2, 0x44, 0x1, 0x0, 0x3b };
-    private final static Handler<AsyncResult<Void>> latencyHandler = reply -> {
-                    if (reply.succeeded()) {
-                        LOGGER.info("publishMessage succeeded");
-                    } else {
-                        LOGGER.info("publishMessage fail: " + reply.cause().toString());
-                    }
-                };
 
     @Override
     public void start(Promise<Void> promise) throws Exception {
@@ -114,7 +107,7 @@ public class HttpServerVerticle extends AbstractVerticle {
             .allowedHeaders(allowedHeaders)
             .allowedMethods(allowedMethods));
         apiRouter
-            .route("/optimize/:mode/topic/:id")
+            .route("/topic/:id")
             .method(HttpMethod.GET)
             .produces("text/*")
             .produces("image/*")
@@ -123,7 +116,7 @@ public class HttpServerVerticle extends AbstractVerticle {
             .post()
             .handler(BodyHandler.create());
         apiRouter
-            .post("/optimize/:mode/topic/:id")
+            .post("/topic/:id")
             .handler(this::apiPost);
 
         ConfigRetriever retriever = ConfigRetriever.create(vertx);
@@ -155,27 +148,19 @@ public class HttpServerVerticle extends AbstractVerticle {
     private void apiPost(RoutingContext context) {
         
         Map<String,String> headers = getHeadersAsMap(context.request().headers());
-        String payload = "hello"; //context.getBodyAsString();
+        String payload = context.getBodyAsString();
         String topic = String.valueOf(context.request().getParam("id"));
         String mode = String.valueOf(context.request().getParam("mode"));
         LOGGER.info("Payload: " + payload);
-        switch(mode){
-            case "latencyd":
-                pubsubService.publishMessage(payload, headers, topic, latencyHandler);
+        Handler<AsyncResult<Void>> handler = reply -> {
+            if (reply.succeeded()) {
                 context.response().setStatusCode(204).end();
-                break;
-            default:
-                Handler<AsyncResult<Void>> handler = reply -> {
-                    if (reply.succeeded()) {
-                        context.response().setStatusCode(204).end();
-                    } else {
-                        //LOGGER.info("apiPost handler reply fail: " + reply.cause().toString());
-                        context.fail(reply.cause());
-                    }
-                };
-                pubsubService.publishMessage(payload, headers, topic, handler);
-        }
-        
+            } else {
+                //LOGGER.info("apiPost handler reply fail: " + reply.cause().toString());
+                context.fail(reply.cause());
+            }
+        };
+        pubsubService.publishMessage(payload, headers, topic, handler);
     }
 
     private void apiGet(RoutingContext context) {
@@ -183,45 +168,28 @@ public class HttpServerVerticle extends AbstractVerticle {
         Map<String,String> headers = getHeadersAsMap(context.request().headers()); //"hello";//context.request().headers().asMap().toString();
         String payload = context.request().query();
         String topic = String.valueOf(context.request().getParam("id"));
-        String mode = String.valueOf(context.request().getParam("mode")); 
-        switch(mode){
-            case "latency":
-                pubsubService.publishMessage(payload, headers, topic, latencyHandler);
+        
+        Handler<AsyncResult<Void>> handler = reply -> {
+            if (reply.succeeded()) {
+                //LOGGER.info("apiGet handler succeeded: " + System.currentTimeMillis());
                 if(context.getAcceptableContentType().equals("image/*")){
                     context.response()
-                        .putHeader("content-type", "image/gif")
-                        .setChunked(true)
-                        .write(Buffer.buffer(trackingGif))
-                        .putHeader("content-length", "trackingGif.length")
-                        .setStatusCode(200)
-                        .end();
+                    .putHeader("content-type", "image/gif")
+                    .setChunked(true)
+                    .write(Buffer.buffer(trackingGif))
+                    .putHeader("content-length", "trackingGif.length")
+                    .setStatusCode(200)
+                    .end();
                 }else{
                     context.response().setStatusCode(204).end();
                 }
-                break;
-            default:
-                Handler<AsyncResult<Void>> handler = reply -> {
-                    if (reply.succeeded()) {
-                        //LOGGER.info("apiGet handler succeeded: " + System.currentTimeMillis());
-                        if(context.getAcceptableContentType().equals("image/*")){
-                            context.response()
-                            .putHeader("content-type", "image/gif")
-                            .setChunked(true)
-                            .write(Buffer.buffer(trackingGif))
-                            .putHeader("content-length", "trackingGif.length")
-                            .setStatusCode(200)
-                            .end();
-                        }else{
-                            context.response().setStatusCode(204).end();
-                        }
-                    } else {
-                        //LOGGER.info("apiGet handler reply fail: " + reply.cause().toString());
-                        context.fail(reply.cause());
-                    }
-                };
-                //LOGGER.info("apiGet publish message: " + System.currentTimeMillis());
-                pubsubService.publishMessage(payload, headers, topic, handler);
-        }
+            } else {
+                //LOGGER.info("apiGet handler reply fail: " + reply.cause().toString());
+                context.fail(reply.cause());
+            }
+        };
+        //LOGGER.info("apiGet publish message: " + System.currentTimeMillis());
+        pubsubService.publishMessage(payload, headers, topic, handler);
     }
 
     private Map<String,String> getHeadersAsMap(MultiMap headersMultiMap){
