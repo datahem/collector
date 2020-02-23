@@ -18,8 +18,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.logging.Logger;
+//import java.util.logging.Logger;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -42,27 +44,22 @@ public class PubsubVerticle extends AbstractVerticle {
     private static CacheLoader<String, Publisher> loader;
     private static RemovalListener<String, Publisher> removalListener;
     private WebClient client;
-    private RequestOptions requestOptions = new RequestOptions();
-    private final static Logger LOGGER = Logger.getLogger("PubsubVerticle");
+    private static final Logger LOG = LoggerFactory.getLogger(PubsubVerticle.class);
 
   @Override
   public void start(Promise<Void> promise) throws Exception {
-      LOGGER.info(PROJECT_ID);
-
       loader = new CacheLoader<String, Publisher>() {
 				@Override
 				public Publisher load(String pubSubTopicId) {
 					Publisher publisher = null;
 					try{
-                        LOGGER.info("PROJECT_ID: " + PROJECT_ID);
-                        LOGGER.info("pubSubTopicID: " + pubSubTopicId);
 						ProjectTopicName topic = ProjectTopicName.of(PROJECT_ID, pubSubTopicId);
-						publisher = Publisher
+                        publisher = Publisher
 							.newBuilder(topic)
 							.build();
-						LOGGER.info("Cache load: " + publisher.getTopicNameString() + ", ref: " + publisher.toString());
+						LOG.info("Cache load: " + publisher.getTopicNameString() + ", ref: " + publisher.toString());
 					}catch (Exception e) {
-						LOGGER.info("PubSubClient Connect load error " + e.toString());
+						LOG.info("PubSubClient Connect load error " + e.toString());
 					}
 					return publisher;
 				}
@@ -72,19 +69,19 @@ public class PubsubVerticle extends AbstractVerticle {
 				@Override
 				public void onRemoval(RemovalNotification<String, Publisher> removal) {
 					final Publisher publisher = removal.getValue();
-					LOGGER.info("Cache remove: " + publisher.getTopicNameString() + ", ref: " + publisher.toString());
+					LOG.info("Cache remove: " + publisher.getTopicNameString() + ", ref: " + publisher.toString());
 					if (publisher != null) {
                         publisher.shutdown();
                         vertx.executeBlocking(promise -> {
                             try{
                                 publisher.awaitTermination(1, TimeUnit.SECONDS);
                             }catch(Exception e){
-                                LOGGER.info("PubSubClient Connect load error " + e);
+                                LOG.error("PubSubClient Connect load error " + e);
                             }    
                             promise.complete("");
                         }, 
                         res -> {
-                            System.out.println("Publisher terminated");
+                            LOG.info("Publisher terminated");
                         });
 					}
 				}
@@ -98,57 +95,36 @@ public class PubsubVerticle extends AbstractVerticle {
 				.build(loader);
             
             client = WebClient.create(vertx);
-
             ConfigRetriever retriever = ConfigRetriever.create(vertx);
             retriever.getConfig(
                 config -> {
                     if (config.failed()) {
+                        LOG.info("Config retriever failed.");
                         promise.fail(config.cause());
                     } else {
-                        /*
-                        String host = config.result().getString("HOST", "8080-dot-3511156-dot-devshell.appspot.com");
-                        LOGGER.info("HOST: " + host);
-                        int port = config.result().getInteger("PORT", 8080);
-                        LOGGER.info("PORT: " + port);
-                        String uri = config.result().getString("URI", "/optimize/default/topic/tmp");
-                        LOGGER.info("URI: " + uri);*/
-                        //requestOptions.setHost(host);
-                            //.setSsl(true)
-                            //.setPort(port)
-                            //.setURI(uri);
-                        //LOGGER.info("PubsubService.create BACKUP_TOPIC: " + config.result().getString("BACKUP_TOPIC"));
-                        JsonObject jsconfig = new JsonObject();
-                        jsconfig.put("foo","bar");
-                        jsconfig.put("BACKUP_TOPIC",config.result().getString("BACKUP_TOPIC", "tmp"));
-                        jsconfig.put("HOST", config.result().getString("HOST", "8080-dot-3511156-dot-devshell.appspot.com"));
-                        jsconfig.put("HOST_PORT", config.result().getInteger("HOST_PORT", 8080));
-                        jsconfig.put("HOST_URI", config.result().getString("HOST_URI", "/optimize/default/topic/tmp"));
-                        jsconfig.put("FREQUENCY", config.result().getInteger("FREQUENCY", 100000));
-                        jsconfig.put("PROJECT_ID", PROJECT_ID);
-                        jsconfig.put("VERSION", config.result().getString("VERSION", "0.9.0"));
+                        JsonObject _config = new JsonObject();
+                        _config.put("BACKUP_TOPIC",config.result().getString("BACKUP_TOPIC", "backup"));
+                        _config.put("HOST", config.result().getString("HOST"));
+                        _config.put("HOST_PORT", config.result().getInteger("HOST_PORT", 8080));
+                        _config.put("HOST_URI", config.result().getString("HOST_URI"));
+                        _config.put("FREQUENCY", config.result().getInteger("FREQUENCY", 0));
+                        _config.put("PROJECT_ID", PROJECT_ID);
+                        _config.put("BODY", config.result().getString("BODY"));
 
                         PubsubService.create(
                             publishers,
-                            //config.result().getString("BACKUP_TOPIC", "tmp"),
-                            jsconfig,
-                            //PROJECT_ID,
+                            _config,
                             client,
-                            /*
-                            requestOptions
-                                .setHost(config.result().getString("HOST", "8080-dot-3511156-dot-devshell.appspot.com"))
-                                //.setSsl(true)
-                                .setPort(config.result().getInteger("PORT", 8080))
-                                .setURI(config.result().getString("URI", "/optimize/default/topic/tmp")),*/
                             ready -> {
                                 if (ready.succeeded()) {
-                                    //LOGGER.info("PubsubService.create succeded: " + System.currentTimeMillis());
+                                    LOG.info("PubsubService created.");
                                     ServiceBinder binder = new ServiceBinder(vertx);
                                     binder
                                         .setAddress(CONFIG_PUBSUB_QUEUE)
                                         .register(PubsubService.class, ready.result());
                                     promise.complete();
                                 } else {
-                                    //LOGGER.info("PubsubService.create fail: " + System.currentTimeMillis());
+                                    LOG.error("PubsubService failed to create.");
                                     promise.fail(ready.cause());
                                 }
                             }

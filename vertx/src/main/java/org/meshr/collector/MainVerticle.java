@@ -17,11 +17,11 @@ import org.slf4j.LoggerFactory;
 
 public class MainVerticle extends AbstractVerticle {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger("MainVerticle.class");
+    private final static Logger LOG = LoggerFactory.getLogger("MainVerticle.class");
 
     @Override
     public void start(Promise<Void> promise) throws Exception { 
-        LOGGER.info("MainVerticle deployed");
+        LOG.info("MainVerticle deployed");
         Promise<String> pubsubVerticleDeployment = Promise.promise();
         vertx.deployVerticle(new PubsubVerticle(), pubsubVerticleDeployment);
 
@@ -30,14 +30,14 @@ public class MainVerticle extends AbstractVerticle {
             vertx.deployVerticle(
                 "org.meshr.collector.vertx.http.HttpServerVerticle",
                 new DeploymentOptions().setInstances(1),
-            httpVerticleDeployment);
+                httpVerticleDeployment);
             return httpVerticleDeployment.future();
         }).setHandler(ar -> {
             if (ar.succeeded()) {
-                LOGGER.info("PubsubVerticle deployed");
+                LOG.info("PubsubVerticle deployed");
                 promise.complete();
             } else {
-                LOGGER.error("PubsubVerticle failed to deploy");
+                LOG.error("PubsubVerticle failed to deploy");
                 promise.fail(ar.cause());
             }
         });

@@ -34,33 +34,21 @@ public interface PubsubService {
   @Fluent
   PubsubService publishMessage(String payload, Map<String,String>headers, String topic, Handler<AsyncResult<Void>> resultHandler);
 
-  // end::interface[]
-
-  // tag::create[]
     @GenIgnore
     static PubsubService create(
         LoadingCache<String, Publisher> publisherCache, 
-        //String backupTopic,
-        JsonObject jsconfig,
-        //String projectId,
+        JsonObject _config,
         WebClient client,
-        //RequestOptions requestOptions, 
         Handler<AsyncResult<PubsubService>> readyHandler) {
             return new PubsubServiceImpl(
                 publisherCache, 
-                //backupTopic, 
-                jsconfig, 
-                //projectId, 
+                _config, 
                 client, 
-                //requestOptions, 
                 readyHandler);
         }
-  // end::create[]
 
-  // tag::proxy[]
   @GenIgnore
   static PubsubService createProxy(Vertx vertx, String address) {
     return new PubsubServiceVertxEBProxy(vertx, address);
   }
-  // end::proxy[]
 }

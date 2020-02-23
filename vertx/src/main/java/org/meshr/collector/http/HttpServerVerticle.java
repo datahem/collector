@@ -60,34 +60,26 @@ import com.google.common.collect.ImmutableMap;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-//import java.util.logging.Logger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author <a href="https://robertsahlin.com/">Robert Sahlin</a>
- */
 public class HttpServerVerticle extends AbstractVerticle {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger("HttpServerVerticle.class");
+    private final static Logger LOG = LoggerFactory.getLogger("HttpServerVerticle.class");
 
     public static final String CONFIG_HTTP_SERVER_PORT = "http.server.port";
     public static final String CONFIG_PUBSUB_QUEUE = "pubsub.queue";
-    public static final String BACKUP_TOPIC = "tmp";
     private PubsubService pubsubService;
-    //private final static Logger LOGGER = Logger.getLogger("HttpServerVerticle");
     private final static byte[] trackingGif = { 0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x1, 0x0, 0x1, 0x0, (byte) 0x80, 0x0, 0x0,
             (byte) 0xff, (byte) 0xff, (byte) 0xff, 0x0, 0x0, 0x0, 0x2c, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x1, 0x0,
             0x0, 0x2, 0x2, 0x44, 0x1, 0x0, 0x3b };
 
     @Override
     public void start(Promise<Void> promise) throws Exception {
-        //LOGGER.info("Creating vertx HTTP server: " + System.currentTimeMillis());
 
         String pubsubQueue = config().getString(CONFIG_PUBSUB_QUEUE, "pubsub.queue");
         pubsubService = PubsubService.createProxy(vertx, pubsubQueue);
         
-
         Set<String> allowedHeaders = new HashSet<>();
         allowedHeaders.add("x-requested-with");
         allowedHeaders.add("Access-Control-Allow-Origin");
@@ -106,15 +98,19 @@ public class HttpServerVerticle extends AbstractVerticle {
             .handler(CorsHandler.create("*")
             .allowedHeaders(allowedHeaders)
             .allowedMethods(allowedMethods));
+
         apiRouter
-            .route("/topic/:id")
-            .method(HttpMethod.GET)
+            //.route("/topic/:id")
+            //.method(HttpMethod.GET)
+            .get("/topic/:id")
             .produces("text/*")
             .produces("image/*")
             .handler(this::apiGet);
+        
         apiRouter
             .post()
             .handler(BodyHandler.create());
+        
         apiRouter
             .post("/topic/:id")
             .handler(this::apiPost);
@@ -123,7 +119,7 @@ public class HttpServerVerticle extends AbstractVerticle {
         retriever.getConfig(
             config -> {
                 if (config.failed()) {
-                    LOGGER.error("Config failed: " + config.cause().toString());
+                    LOG.error("Config failed: " + config.cause().toString());
                     promise.fail(config.cause());
                 } else {
                     vertx
@@ -132,10 +128,10 @@ public class HttpServerVerticle extends AbstractVerticle {
                         .listen(config.result().getInteger("HTTP_PORT", 8080),
                             ar -> {
                                 if (ar.succeeded()) {
-                                    LOGGER.info("HTTP server running on port: " + ar.result().actualPort());
+                                    LOG.info("HTTP server running on port: " + ar.result().actualPort());
                                     promise.complete();
                                 } else {
-                                    LOGGER.error("Could not start a HTTP server: " + ar.cause().toString());
+                                    LOG.error("Could not start a HTTP server: " + ar.cause().toString());
                                     promise.fail(ar.cause());
                                 }
                             }
@@ -151,12 +147,11 @@ public class HttpServerVerticle extends AbstractVerticle {
         String payload = context.getBodyAsString();
         String topic = String.valueOf(context.request().getParam("id"));
         String mode = String.valueOf(context.request().getParam("mode"));
-        LOGGER.info("Payload: " + payload);
         Handler<AsyncResult<Void>> handler = reply -> {
             if (reply.succeeded()) {
                 context.response().setStatusCode(204).end();
             } else {
-                //LOGGER.info("apiPost handler reply fail: " + reply.cause().toString());
+                LOG.error("apiPost handler reply fail: ", reply.cause());
                 context.fail(reply.cause());
             }
         };
@@ -164,14 +159,12 @@ public class HttpServerVerticle extends AbstractVerticle {
     }
 
     private void apiGet(RoutingContext context) {
-        //LOGGER.info(context.getAcceptableContentType());
-        Map<String,String> headers = getHeadersAsMap(context.request().headers()); //"hello";//context.request().headers().asMap().toString();
+        Map<String,String> headers = getHeadersAsMap(context.request().headers());
         String payload = context.request().query();
         String topic = String.valueOf(context.request().getParam("id"));
         
         Handler<AsyncResult<Void>> handler = reply -> {
             if (reply.succeeded()) {
-                //LOGGER.info("apiGet handler succeeded: " + System.currentTimeMillis());
                 if(context.getAcceptableContentType().equals("image/*")){
                     context.response()
                     .putHeader("content-type", "image/gif")
@@ -184,11 +177,10 @@ public class HttpServerVerticle extends AbstractVerticle {
                     context.response().setStatusCode(204).end();
                 }
             } else {
-                //LOGGER.info("apiGet handler reply fail: " + reply.cause().toString());
+                LOG.info("apiGet handler reply fail: ", reply.cause());
                 context.fail(reply.cause());
             }
         };
-        //LOGGER.info("apiGet publish message: " + System.currentTimeMillis());
         pubsubService.publishMessage(payload, headers, topic, handler);
     }
 
@@ -199,5 +191,4 @@ public class HttpServerVerticle extends AbstractVerticle {
 			.map(s -> new String[]{s, headersMultiMap.get(s)})
             .collect(HashMap::new, (m,v)->m.put(v[0].toLowerCase(), v[1]), HashMap::putAll);
     }
-    
 }
