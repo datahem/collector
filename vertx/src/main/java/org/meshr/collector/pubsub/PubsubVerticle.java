@@ -94,12 +94,10 @@ public class PubsubVerticle extends AbstractVerticle {
 				.expireAfterAccess(60, TimeUnit.SECONDS)
 				.build(loader);
             
-            //client = WebClient.create(vertx);
             PubsubService.create(
                             publishers,
                             config().put("PROJECT_ID", PROJECT_ID),
                             WebClient.create(vertx),
-                            //client,
                             ready -> {
                                 if (ready.succeeded()) {
                                     LOG.info("PubsubService created.");
@@ -114,44 +112,5 @@ public class PubsubVerticle extends AbstractVerticle {
                                 }
                             }
                         );
-            /*
-            ConfigRetriever retriever = ConfigRetriever.create(vertx);
-            
-            retriever.getConfig(
-                config -> {
-                    if (config.failed()) {
-                        LOG.info("Config retriever failed.");
-                        promise.fail(config.cause());
-                    } else {
-                        JsonObject _config = new JsonObject();
-                        _config.put("BACKUP_TOPIC",config.result().getString("BACKUP_TOPIC", "backup"));
-                        _config.put("HOST", config.result().getString("HOST"));
-                        _config.put("HOST_PORT", config.result().getInteger("HOST_PORT", 8080));
-                        _config.put("HOST_URI", config.result().getString("HOST_URI"));
-                        _config.put("FREQUENCY", config.result().getInteger("FREQUENCY", 0));
-                        _config.put("PROJECT_ID", PROJECT_ID);
-                        _config.put("BODY", config.result().getString("BODY"));
-
-                        PubsubService.create(
-                            publishers,
-                            _config,
-                            client,
-                            ready -> {
-                                if (ready.succeeded()) {
-                                    LOG.info("PubsubService created.");
-                                    ServiceBinder binder = new ServiceBinder(vertx);
-                                    binder
-                                        .setAddress(CONFIG_PUBSUB_QUEUE)
-                                        .register(PubsubService.class, ready.result());
-                                    promise.complete();
-                                } else {
-                                    LOG.error("PubsubService failed to create.");
-                                    promise.fail(ready.cause());
-                                }
-                            }
-                        );
-                    }
-                }
-            );*/
     }
 }

@@ -12,7 +12,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-//import java.util.logging.Logger;
 import io.vertx.core.CompositeFuture;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
@@ -33,8 +32,6 @@ import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
 import java.util.UUID;
 import com.google.common.collect.ImmutableMap;
-//import org.joda.time.DateTime;
-//import org.joda.time.DateTimeZone;
 import java.time.Instant;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
@@ -54,20 +51,20 @@ class PubsubServiceImpl implements PubsubService {
   private static final Logger LOG = LoggerFactory.getLogger(PubsubServiceImpl.class);
 
     LoadingCache<String, Publisher> publisherCache;
-    JsonObject _config;
+    JsonObject config;
     WebClient client;
     Random rand;
     String backupTopic;
 
     PubsubServiceImpl(
         LoadingCache<String, Publisher> publisherCache, 
-        JsonObject _config,
+        JsonObject config,
         WebClient client,
         Handler<AsyncResult<PubsubService>> readyHandler) {
             this.publisherCache = publisherCache;
-            this._config = _config;
+            this.config = config;
             this.client = client;
-            this.backupTopic = _config.getString("BACKUP_TOPIC");
+            this.backupTopic = config.getString("BACKUP_TOPIC");
             this.rand = new Random();
             readyHandler.handle(Future.succeededFuture(this));
     }
@@ -98,7 +95,6 @@ class PubsubServiceImpl implements PubsubService {
 			    .putAllAttributes(
                     ImmutableMap.<String, String>builder()
                         .putAll(headers)
-                        //.put("timestamp", new DateTime(DateTimeZone.UTC).toString())
                         .put("timestamp", Instant.now().toString())
                         .put("source", topic)
                         .put("uuid", uuid)
@@ -141,15 +137,14 @@ class PubsubServiceImpl implements PubsubService {
   }
 
     private void keepAlive(){
-        if(_config.getInteger("FREQUENCY") > 0 && rand.nextInt(_config.getInteger("FREQUENCY"))==0){ 
-            LOG.info(_config.getInteger("HOST_PORT", 443) + _config.getString("HOST") + _config.getString("HOST_URI"));
+        if(config.getInteger("FREQUENCY") > 0 && rand.nextInt(config.getInteger("FREQUENCY"))==0){ 
             client
-                .post(_config.getInteger("HOST_PORT", 443), _config.getString("HOST"), _config.getString("HOST_URI"))
+                .post(config.getInteger("HOST_PORT", 443), config.getString("HOST"), config.getString("HOST_URI"))
                 .ssl(true)
                 .putHeader("Content-Type", "application/json")
                 .as(BodyCodec.jsonObject())
                 .sendJsonObject(new JsonObject()
-                    .put("id", _config.getString("PROJECT_ID"))
+                    .put("id", config.getString("PROJECT_ID"))
                     .put("class", this.getClass().getPackage().toString())
                     , ar -> {
                         if(ar.succeeded()) {

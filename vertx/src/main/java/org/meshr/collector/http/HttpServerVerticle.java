@@ -14,6 +14,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.client.HttpResponse;
@@ -95,50 +96,63 @@ public class HttpServerVerticle extends AbstractVerticle {
         Router apiRouter = Router.router(vertx);
         apiRouter
             .route()
-            .handler(CorsHandler.create("*")
+            //.handler(CorsHandler.create("*")
+            .handler(CorsHandler.create(config().getString("ALLOWED_ORIGINS_REGEX","*"))
             .allowedHeaders(allowedHeaders)
             .allowedMethods(allowedMethods));
 
         apiRouter
-            //.route("/topic/:id")
-            //.method(HttpMethod.GET)
             .get("/topic/:id")
             .produces("text/*")
             .produces("image/*")
             .handler(this::apiGet);
-        
+
         apiRouter
             .post()
             .handler(BodyHandler.create());
         
         apiRouter
+            .post("/cookie")
+            .handler(this::apiCookie);
+
+        apiRouter
             .post("/topic/:id")
             .handler(this::apiPost);
 
-        ConfigRetriever retriever = ConfigRetriever.create(vertx);
-        retriever.getConfig(
-            config -> {
-                if (config.failed()) {
-                    LOG.error("Config failed: " + config.cause().toString());
-                    promise.fail(config.cause());
-                } else {
-                    vertx
-                        .createHttpServer()
-                        .requestHandler(apiRouter)
-                        .listen(config.result().getInteger("HTTP_PORT", 8080),
-                            ar -> {
-                                if (ar.succeeded()) {
-                                    LOG.info("HTTP server running on port: " + ar.result().actualPort());
-                                    promise.complete();
-                                } else {
-                                    LOG.error("Could not start a HTTP server: " + ar.cause().toString());
-                                    promise.fail(ar.cause());
-                                }
-                            }
-                        );
+        vertx
+            .createHttpServer()
+            .requestHandler(apiRouter)
+            .listen(config().getInteger("HTTP_PORT", 8080),
+                ar -> {
+                    if (ar.succeeded()) {
+                        LOG.info("HTTP server running on port: " + ar.result().actualPort());
+                        promise.complete();
+                    } else {
+                        LOG.error("Could not start a HTTP server: " + ar.cause().toString());
+                        promise.fail(ar.cause());
+                    }
                 }
+            );
+    }
+
+    private void apiCookie(RoutingContext context) {
+        
+        Map<String,String> headers = getHeadersAsMap(context.request().headers());
+        JsonArray cookies = context.getBodyAsJsonArray();
+        Map<String, Cookie> cookieMap = context.cookieMap();
+        cookies.forEach(object -> {
+            JsonObject cookie = (JsonObject) object;
+            if(cookie.containsKey("name") && cookie.containsKey("value")){
+                LOG.info("cookie config: " + cookie.toString() + ", real cookie: " + cookieMap.get(cookie.getString("name")).encode());
+                context.addCookie(
+                    cookieMap
+                        .get(cookie.getString("name"))
+                        .setMaxAge(cookie.getLong("maxAge"))
+                        .setDomain(cookie.getString("domain"))
+                );
             }
-        );
+        });
+        context.response().setStatusCode(204).end();
     }
 
     private void apiPost(RoutingContext context) {
@@ -146,7 +160,6 @@ public class HttpServerVerticle extends AbstractVerticle {
         Map<String,String> headers = getHeadersAsMap(context.request().headers());
         String payload = context.getBodyAsString();
         String topic = String.valueOf(context.request().getParam("id"));
-        String mode = String.valueOf(context.request().getParam("mode"));
         Handler<AsyncResult<Void>> handler = reply -> {
             if (reply.succeeded()) {
                 context.response().setStatusCode(204).end();

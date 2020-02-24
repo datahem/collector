@@ -32,7 +32,6 @@ public class MainVerticle extends AbstractVerticle {
                         promise.fail(config.cause());
                     } else {
                         Promise<String> pubsubVerticleDeployment = Promise.promise();
-                        //vertx.deployVerticle(new PubsubVerticle(), pubsubVerticleDeployment);
                         vertx.deployVerticle(
                             PubsubVerticle.class.getName(),
                             new DeploymentOptions()
@@ -48,10 +47,6 @@ public class MainVerticle extends AbstractVerticle {
                                     .setConfig(config.result()),
                                 httpVerticleDeployment
                             );
-                            /*vertx.deployVerticle(
-                                "org.meshr.collector.vertx.http.HttpServerVerticle",
-                                new DeploymentOptions().setInstances(1),
-                                httpVerticleDeployment);*/
                             return httpVerticleDeployment.future();
                         }).setHandler(ar -> {
                             if (ar.succeeded()) {

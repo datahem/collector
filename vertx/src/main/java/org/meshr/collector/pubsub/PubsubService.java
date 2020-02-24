@@ -31,24 +31,29 @@ import java.util.logging.Logger;
 @VertxGen
 public interface PubsubService {
 
-  @Fluent
-  PubsubService publishMessage(String payload, Map<String,String>headers, String topic, Handler<AsyncResult<Void>> resultHandler);
+    @Fluent
+    PubsubService publishMessage(
+        String payload, 
+        Map<String,String>headers, 
+        String topic, 
+        Handler<AsyncResult<Void>> resultHandler
+    );
 
     @GenIgnore
     static PubsubService create(
         LoadingCache<String, Publisher> publisherCache, 
-        JsonObject _config,
+        JsonObject config,
         WebClient client,
         Handler<AsyncResult<PubsubService>> readyHandler) {
             return new PubsubServiceImpl(
                 publisherCache, 
-                _config, 
+                config, 
                 client, 
                 readyHandler);
         }
 
-  @GenIgnore
-  static PubsubService createProxy(Vertx vertx, String address) {
-    return new PubsubServiceVertxEBProxy(vertx, address);
-  }
+    @GenIgnore
+    static PubsubService createProxy(Vertx vertx, String address) {
+        return new PubsubServiceVertxEBProxy(vertx, address);
+    }
 }
