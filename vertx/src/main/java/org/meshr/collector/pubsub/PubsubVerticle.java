@@ -94,8 +94,29 @@ public class PubsubVerticle extends AbstractVerticle {
 				.expireAfterAccess(60, TimeUnit.SECONDS)
 				.build(loader);
             
-            client = WebClient.create(vertx);
+            //client = WebClient.create(vertx);
+            PubsubService.create(
+                            publishers,
+                            config().put("PROJECT_ID", PROJECT_ID),
+                            WebClient.create(vertx),
+                            //client,
+                            ready -> {
+                                if (ready.succeeded()) {
+                                    LOG.info("PubsubService created.");
+                                    ServiceBinder binder = new ServiceBinder(vertx);
+                                    binder
+                                        .setAddress(CONFIG_PUBSUB_QUEUE)
+                                        .register(PubsubService.class, ready.result());
+                                    promise.complete();
+                                } else {
+                                    LOG.error("PubsubService failed to create.");
+                                    promise.fail(ready.cause());
+                                }
+                            }
+                        );
+            /*
             ConfigRetriever retriever = ConfigRetriever.create(vertx);
+            
             retriever.getConfig(
                 config -> {
                     if (config.failed()) {
@@ -131,6 +152,6 @@ public class PubsubVerticle extends AbstractVerticle {
                         );
                     }
                 }
-            );
+            );*/
     }
 }

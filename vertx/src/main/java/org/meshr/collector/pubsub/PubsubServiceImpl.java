@@ -18,6 +18,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.HttpMethod;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.google.cloud.ServiceOptions;
@@ -98,7 +99,7 @@ class PubsubServiceImpl implements PubsubService {
                     ImmutableMap.<String, String>builder()
                         .putAll(headers)
                         //.put("timestamp", new DateTime(DateTimeZone.UTC).toString())
-                        //.put("timestamp", Instant.now().toString())
+                        .put("timestamp", Instant.now().toString())
                         .put("source", topic)
                         .put("uuid", uuid)
                         .build()
@@ -141,23 +142,22 @@ class PubsubServiceImpl implements PubsubService {
 
     private void keepAlive(){
         if(_config.getInteger("FREQUENCY") > 0 && rand.nextInt(_config.getInteger("FREQUENCY"))==0){ 
-            LOG.info(_config.getInteger("HOST_PORT") + _config.getString("HOST") + _config.getString("HOST_URI"));
+            LOG.info(_config.getInteger("HOST_PORT", 443) + _config.getString("HOST") + _config.getString("HOST_URI"));
             client
-                .post(_config.getInteger("HOST_PORT"), _config.getString("HOST"), _config.getString("HOST_URI"))
+                .post(_config.getInteger("HOST_PORT", 443), _config.getString("HOST"), _config.getString("HOST_URI"))
                 .ssl(true)
                 .putHeader("Content-Type", "application/json")
                 .as(BodyCodec.jsonObject())
                 .sendJsonObject(new JsonObject()
-                    .put("projectID", "projectId")
-                    .put("package", this.getClass().getPackage().toString())
-                    .put("version", this.getClass().getPackage().getImplementationVersion())
+                    .put("id", _config.getString("PROJECT_ID"))
+                    .put("class", this.getClass().getPackage().toString())
                     , ar -> {
                         if(ar.succeeded()) {
-                            LOG.info("Keep alive response status code " + ar.result().statusCode());
+                            LOG.info("Keep alive status " + ar.result().statusCode());
                         }else {
                             LOG.warn("Keep alive fail " + ar.cause().getMessage());
                         }
-                });
+                });        
         }
     }
 }
