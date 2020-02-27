@@ -17,6 +17,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.Vertx;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -139,20 +140,21 @@ class PubsubServiceImpl implements PubsubService {
     private void keepAlive(){
         if(config.getInteger("FREQUENCY") > 0 && rand.nextInt(config.getInteger("FREQUENCY"))==0){ 
             client
-                .post(config.getInteger("HOST_PORT", 443), config.getString("HOST"), config.getString("HOST_URI"))
-                .ssl(true)
-                .putHeader("Content-Type", "application/json")
-                .as(BodyCodec.jsonObject())
-                .sendJsonObject(new JsonObject()
-                    .put("id", config.getString("PROJECT_ID"))
-                    .put("class", this.getClass().getPackage().toString())
-                    , ar -> {
-                        if(ar.succeeded()) {
-                            LOG.info("Keep alive status " + ar.result().statusCode());
-                        }else {
-                            LOG.warn("Keep alive fail " + ar.cause().getMessage());
-                        }
-                });        
+            .post(config.getInteger("HOST_PORT", 443), config.getString("HOST"), config.getString("HOST_URI"))
+            .ssl(true)
+            .timeout(1000)
+            .putHeader("Content-Type", "application/json")
+            .as(BodyCodec.jsonObject())
+            .sendJsonObject(new JsonObject()
+                .put("id", config.getString("PROJECT_ID"))
+                .put("class", this.getClass().getPackage().toString())
+                , ar -> {
+                    if(ar.succeeded()) {
+                        LOG.info("Keep alive status " + ar.result().statusCode());
+                    }else {
+                        LOG.warn("Keep alive warn " + ar.cause().getMessage());
+                    }
+            });    
         }
     }
 }

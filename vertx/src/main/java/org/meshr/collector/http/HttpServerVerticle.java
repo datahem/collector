@@ -22,6 +22,7 @@ import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.config.ConfigRetriever;
+import io.vertx.core.json.JsonObject;
 
 
 import com.google.api.core.ApiFuture;
@@ -83,7 +84,9 @@ public class HttpServerVerticle extends AbstractVerticle {
         
         Set<String> allowedHeaders = new HashSet<>();
         allowedHeaders.add("x-requested-with");
+        allowedHeaders.add("Access-Control-Allow-Method");
         allowedHeaders.add("Access-Control-Allow-Origin");
+        allowedHeaders.add("Access-Control-Allow-Credentials");
         allowedHeaders.add("origin");
         allowedHeaders.add("Content-Type");
         allowedHeaders.add("accept");
@@ -97,15 +100,22 @@ public class HttpServerVerticle extends AbstractVerticle {
         apiRouter
             .route()
             //.handler(CorsHandler.create("*")
-            .handler(CorsHandler.create(config().getString("ALLOWED_ORIGINS_REGEX","*"))
-            .allowedHeaders(allowedHeaders)
-            .allowedMethods(allowedMethods));
+            .handler(CorsHandler
+                .create(config().getString("ALLOWED_ORIGINS_PATTERN",".*."))
+                .allowCredentials(true)
+                .allowedHeaders(allowedHeaders)
+                .allowedMethods(allowedMethods));
 
         apiRouter
             .get("/topic/:id")
             .produces("text/*")
             .produces("image/*")
             .handler(this::apiGet);
+        
+        apiRouter
+            .get("/headers")
+            .produces("application/json")
+            .handler(this::apiHeaders);
 
         apiRouter
             .post()
@@ -135,23 +145,47 @@ public class HttpServerVerticle extends AbstractVerticle {
             );
     }
 
-    private void apiCookie(RoutingContext context) {
-        
+    private void apiHeaders(RoutingContext context) {
+        try{
         Map<String,String> headers = getHeadersAsMap(context.request().headers());
-        JsonArray cookies = context.getBodyAsJsonArray();
-        Map<String, Cookie> cookieMap = context.cookieMap();
-        cookies.forEach(object -> {
-            JsonObject cookie = (JsonObject) object;
-            if(cookie.containsKey("name") && cookie.containsKey("value")){
-                LOG.info("cookie config: " + cookie.toString() + ", real cookie: " + cookieMap.get(cookie.getString("name")).encode());
-                context.addCookie(
-                    cookieMap
-                        .get(cookie.getString("name"))
-                        .setMaxAge(cookie.getLong("maxAge"))
-                        .setDomain(cookie.getString("domain"))
-                );
-            }
+        JsonObject j = new JsonObject();
+        headers.forEach((k,v)->{
+            j.put(k,v);
         });
+        LOG.info("Headers as json: " + j.toString());
+        context
+            .response()
+                .setStatusCode(200)
+                .putHeader("content-type", context.getAcceptableContentType())
+                .setChunked(true)
+                .write(j.toString())
+                .end();
+        }catch(Exception e){
+            LOG.error("error: ", e);
+        }
+    }
+
+    private void apiCookie(RoutingContext context) {
+        try{
+            JsonArray cookies = context.getBodyAsJsonArray();
+            LOG.info("cookies: " + cookies.toString());
+            Map<String, Cookie> cookieMap = context.cookieMap();
+            LOG.info("cookieMap: " + cookieMap.toString());
+            cookies.forEach(object -> {
+                JsonObject cookie = (JsonObject) object;
+                if(cookie.containsKey("name")){
+                    LOG.info("cookie config: " + cookie.toString() + ", real cookie: " + cookieMap.get(cookie.getString("name")).encode());
+                    context.addCookie(
+                        cookieMap
+                            .get(cookie.getString("name"))
+                            .setMaxAge(cookie.getLong("maxAge"))
+                            .setDomain(cookie.getString("domain"))
+                    );
+                }
+            });
+        }catch(Exception e){
+            LOG.error("cookie exception: ", e);
+        }
         context.response().setStatusCode(204).end();
     }
 
