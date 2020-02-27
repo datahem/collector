@@ -12,7 +12,9 @@
   <properties>
     <vertx.version>3.8.3</vertx.version>
     <main.verticle>org.meshr.collector.vertx.MainVerticle</main.verticle>
+    <main.class>io.vertx.core.Launcher</main.class>
   </properties>
+
 
   <dependencyManagement>
     <dependencies>
@@ -27,7 +29,14 @@
   </dependencyManagement>
 
   <dependencies>
+<!-- https://mvnrepository.com/artifact/com.google.cloud/google-cloud-core -->
+<dependency>
+    <groupId>com.google.cloud</groupId>
+    <artifactId>google-cloud-core</artifactId>
+    <version>1.92.5</version>
+</dependency>
 
+<!-->
 <dependency>
     <groupId>com.google.cloud</groupId>
     <artifactId>google-cloud-storage</artifactId>
@@ -39,7 +48,7 @@
     <artifactId>joda-time</artifactId>
     <version>2.10.5</version>
 </dependency>
-
+-->
   <dependency>
     <groupId>org.conscrypt</groupId>
     <artifactId>conscrypt-openjdk</artifactId>
@@ -99,8 +108,10 @@
   </dependencies>
 
   <build>
+  <!-->
     <pluginManagement>
       <plugins>
+      
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.5.1</version>
@@ -139,8 +150,10 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    -->
 
     <plugins>
+    <!-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -197,7 +210,70 @@
             <argument>${main.verticle}</argument>
           </arguments>
         </configuration>
+      </plugin>-->
+      <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.5.1</version>
+          <configuration>
+            <source>1.8</source>
+            <target>1.8</target>
+            <useIncrementalCompilation>false</useIncrementalCompilation>
+
+            <annotationProcessors>
+              <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
+            </annotationProcessors>
+            <generatedSourcesDirectory>${project.basedir}/src/main/generated</generatedSourcesDirectory>
+            <compilerArgs>
+              <arg>-AoutputDirectory=${project.basedir}/src/main</arg>
+            </compilerArgs>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>3.0.0</version>
+          <configuration>
+            <filesets>
+              <fileset>
+                <directory>${project.basedir}/src/main/generated</directory>
+              </fileset>
+            </filesets>
+          </configuration>
+        </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>${main.class}</mainClass>
+        </configuration>
       </plugin>
+      <plugin>
+        <groupId>com.google.cloud.tools</groupId>
+        <artifactId>jib-maven-plugin</artifactId>
+        <version>2.1.0</version>
+        <configuration>
+          <to>
+            <image>gcr.io/datahem/vertx-webhook-jib</image>
+            <tags>
+              <tag>v1</tag>
+            </tags>
+          </to>
+          <container>
+            <mainClass>${main.class}</mainClass>
+            <ports>
+              <port>8080</port>
+            </ports>
+          </container>
+        </configuration>
+      </plugin>
+    
     </plugins>
   </build>
 
