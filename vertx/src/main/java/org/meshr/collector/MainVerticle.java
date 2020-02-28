@@ -8,17 +8,23 @@ package org.meshr.collector.vertx;
  */
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Vertx;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.config.ConfigRetriever;
 import org.meshr.collector.vertx.pubsub.PubsubVerticle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 public class MainVerticle extends AbstractVerticle {
 
     private final static Logger LOG = LoggerFactory.getLogger("MainVerticle.class");
+
+    public static void main(String[] args) {
+        Vertx vertx = Vertx.vertx();
+        vertx.deployVerticle(new MainVerticle());
+    }
 
     @Override
     public void start(Promise<Void> promise) throws Exception { 

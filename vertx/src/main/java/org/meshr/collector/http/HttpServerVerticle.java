@@ -62,8 +62,8 @@ import com.google.common.collect.ImmutableMap;
 //import org.joda.time.DateTime;
 //import org.joda.time.DateTimeZone;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 public class HttpServerVerticle extends AbstractVerticle {
 

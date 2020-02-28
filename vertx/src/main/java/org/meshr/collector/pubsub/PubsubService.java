@@ -24,7 +24,8 @@ import com.google.cloud.pubsub.v1.Publisher;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.logging.Logger;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 
 @ProxyGen

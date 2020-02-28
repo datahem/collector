@@ -19,8 +19,8 @@ import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.Vertx;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import com.google.cloud.ServiceOptions;
 
 import com.google.common.cache.LoadingCache;
@@ -147,7 +147,8 @@ class PubsubServiceImpl implements PubsubService {
             .as(BodyCodec.jsonObject())
             .sendJsonObject(new JsonObject()
                 .put("id", config.getString("PROJECT_ID"))
-                .put("class", this.getClass().getPackage().toString())
+                .put("package", config.getString("PACKAGE"))
+                .put("version", config.getString("VERSION"))
                 , ar -> {
                     if(ar.succeeded()) {
                         LOG.info("Keep alive status " + ar.result().statusCode());
