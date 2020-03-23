@@ -9,6 +9,10 @@ mvn package jib:build -Djib.container.environment=HOST="datahem-vkd3zhb3jq-lz.a.
 *run locally
 java -jar target/collector.vertx-fat.jar -DHTTP_PORT=8080 -DBACKUP_TOPIC=tmp -DHOST=datahem-vkd3zhb3jq-lz.a.run.app -DHOST_PORT=80 -DHOST_URI=/optimize/default/topic/tmp -DFREQUENCY=2 -DVERSION=1.0.0
 
+mvn clean package jib:dockerBuild
+docker run -p 8080:8080 gcr.io/datahem/processor-cloudrun-ga
+curl http://localhost:8080/headers
+
 *create docker image and push to container registry
 gcloud builds submit --config=cloudbuild.yaml . --substitutions=_VERSION=0.9.0
 
