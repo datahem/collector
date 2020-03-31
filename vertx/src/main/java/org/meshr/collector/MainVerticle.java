@@ -41,6 +41,9 @@ public class MainVerticle extends AbstractVerticle {
                         vertx.deployVerticle(
                             PubsubVerticle.class.getName(),
                             new DeploymentOptions()
+                                .setWorker(true)
+                                .setInstances(1)
+                                .setWorkerPoolSize(1)
                                 .setConfig(config.result()), 
                             pubsubVerticleDeployment
                         );
