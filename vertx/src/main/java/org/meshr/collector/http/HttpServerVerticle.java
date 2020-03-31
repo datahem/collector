@@ -118,6 +118,10 @@ public class HttpServerVerticle extends AbstractVerticle {
             .handler(this::apiHeaders);
 
         apiRouter
+            .get("/keepalive")
+            .handler(this::apiKeepAlive);
+
+        apiRouter
             .post()
             .handler(BodyHandler.create());
         
@@ -163,6 +167,10 @@ public class HttpServerVerticle extends AbstractVerticle {
         }catch(Exception e){
             LOG.error("error: ", e);
         }
+    }
+
+     private void apiKeepAlive(RoutingContext context) {
+        context.response().setStatusCode(204).end();
     }
 
     private void apiCookie(RoutingContext context) {
