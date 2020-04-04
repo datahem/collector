@@ -71,10 +71,11 @@ class PubsubServiceImpl implements PubsubService {
     }
 
     @Override
-    public PubsubService publishMessage(String payload, Map<String,String> headers, String topic, Handler<AsyncResult<Void>> resultHandler) {
+    public PubsubService publishMessage(String payload, String topic, Handler<AsyncResult<Void>> resultHandler) {
         String uuid = UUID.randomUUID().toString();
         
         //Anonymize IP
+        /*
         try{
             String ip = headers.getOrDefault("x-forwarded-for", "").split(",")[0];
             if(ip.lastIndexOf(".") != -1){ // IP v4
@@ -89,13 +90,13 @@ class PubsubServiceImpl implements PubsubService {
             }
         }catch(StringIndexOutOfBoundsException e){
             LOG.error("IP Anonymization StringIndexOutOfBoundsException: ", e);
-        }
+        }*/
         
         try {
             PubsubMessage pubsubMessage = PubsubMessage.newBuilder()
 			    .putAllAttributes(
                     ImmutableMap.<String, String>builder()
-                        .putAll(headers)
+                        //.putAll(headers)
                         .put("timestamp", Instant.now().toString())
                         .put("source", topic)
                         .put("uuid", uuid)

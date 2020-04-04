@@ -198,9 +198,6 @@ public class HttpServerVerticle extends AbstractVerticle {
     }
 
     private void apiPost(RoutingContext context) {
-        
-        Map<String,String> headers = getHeadersAsMap(context.request().headers());
-        String payload = context.getBodyAsString();
         String topic = String.valueOf(context.request().getParam("id"));
         Handler<AsyncResult<Void>> handler = reply -> {
             if (reply.succeeded()) {
@@ -210,12 +207,10 @@ public class HttpServerVerticle extends AbstractVerticle {
                 context.fail(reply.cause());
             }
         };
-        pubsubService.publishMessage(payload, headers, topic, handler);
+        pubsubService.publishMessage(getPayload(context), topic, handler);
     }
 
     private void apiGet(RoutingContext context) {
-        Map<String,String> headers = getHeadersAsMap(context.request().headers());
-        String payload = context.request().query();
         String topic = String.valueOf(context.request().getParam("id"));
         
         Handler<AsyncResult<Void>> handler = reply -> {
@@ -236,7 +231,7 @@ public class HttpServerVerticle extends AbstractVerticle {
                 context.fail(reply.cause());
             }
         };
-        pubsubService.publishMessage(payload, headers, topic, handler);
+        pubsubService.publishMessage(getPayload(context), topic, handler);
     }
 
     private Map<String,String> getHeadersAsMap(MultiMap headersMultiMap){
@@ -246,4 +241,38 @@ public class HttpServerVerticle extends AbstractVerticle {
 			.map(s -> new String[]{s, headersMultiMap.get(s)})
             .collect(HashMap::new, (m,v)->m.put(v[0].toLowerCase(), v[1]), HashMap::putAll);
     }
+
+    private String getPayload(RoutingContext context){
+        Map<String,String> headersMap = anonymizeIp(getHeadersAsMap(context.request().headers()));
+        JsonObject headers = new JsonObject();
+        headersMap.forEach((k,v)->{
+            headers.put(k,v);
+        });
+        JsonObject payload = new JsonObject();
+        payload
+            .put("body", context.getBodyAsString())
+            .put("query", context.request().query())
+            .put("headers", headers);
+        return payload.toString();
+    }
+
+    private Map<String,String> anonymizeIp(Map<String, String> headers){
+        try{
+            String ip = headers.getOrDefault("x-forwarded-for", "").split(",")[0];
+            if(ip.lastIndexOf(".") != -1){ // IP v4
+                headers.put("x-forwarded-for", ip.substring(0, ip.lastIndexOf("."))+".0");
+            }else if(ip.lastIndexOf(":") != -1){ // IP v6
+                int n = 3;
+                String substr = ":";
+                int pos = ip.indexOf(substr);
+                while (--n > 0 && pos != -1)
+                    pos = ip.indexOf(substr, pos + 1);
+                headers.put("x-forwarded-for", ip.substring(0, pos)+":::::");
+            }
+        }catch(StringIndexOutOfBoundsException e){
+            LOG.error("IP Anonymization StringIndexOutOfBoundsException: ", e);
+        }
+        return headers;
+    }
+
 }
