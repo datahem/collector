@@ -210,7 +210,7 @@ public class HttpServerVerticle extends AbstractVerticle {
                 context.fail(reply.cause());
             }
         };
-        LOG.info(context.getBodyAsString());
+        LOG.info("message body: " + context.getBodyAsString());
         pubsubService.publishMessage(context.getBodyAsJson(), topic, handler);
     }
 
