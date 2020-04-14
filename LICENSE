@@ -3,7 +3,7 @@ Business Source License 1.1
 Parameters
 
 Licensor:             Robert Sahlin
-Licensed Work:        DataHem Collector
+Licensed Work:        Meshr Collector
                       The Licensed Work is (c) 2020 Robert Sahlin.
 Additional Use Grant: You may use the Licensed Work when the Licensed Work is 
                       processing less than 5 Million unique events per month, 
@@ -13,7 +13,7 @@ Additional Use Grant: You may use the Licensed Work when the Licensed Work is
                       parties directly benefit from the features of the Licensed Work.
 
 Change Date:          6 months after the code is pushed to the master branch in 
-                      https://github.com/datahem/collector/tree/master
+                      https://github.com/getmeshr/collector/tree/master
 
 Change License:       GNU AFFERO GENERAL PUBLIC LICENSE, Version 3
 
