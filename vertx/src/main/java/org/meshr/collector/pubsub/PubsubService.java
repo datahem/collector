@@ -34,7 +34,7 @@ public interface PubsubService {
 
     @Fluent
     PubsubService publishMessage(
-        String payload, 
+        JsonObject body, 
         //Map<String,String>headers, 
         String topic, 
         Handler<AsyncResult<Void>> resultHandler

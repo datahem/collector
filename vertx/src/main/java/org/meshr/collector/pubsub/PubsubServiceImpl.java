@@ -71,38 +71,28 @@ class PubsubServiceImpl implements PubsubService {
     }
 
     @Override
-    public PubsubService publishMessage(String payload, String topic, Handler<AsyncResult<Void>> resultHandler) {
+    public PubsubService publishMessage(JsonObject body, String topic, Handler<AsyncResult<Void>> resultHandler) {
         String uuid = UUID.randomUUID().toString();
-        
-        //Anonymize IP
-        /*
-        try{
-            String ip = headers.getOrDefault("x-forwarded-for", "").split(",")[0];
-            if(ip.lastIndexOf(".") != -1){ // IP v4
-                headers.put("x-forwarded-for", ip.substring(0, ip.lastIndexOf("."))+".0");
-            }else if(ip.lastIndexOf(":") != -1){ // IP v6
-                int n = 3;
-                String substr = ":";
-                int pos = ip.indexOf(substr);
-                while (--n > 0 && pos != -1)
-                    pos = ip.indexOf(substr, pos + 1);
-                headers.put("x-forwarded-for", ip.substring(0, pos)+":::::");
-            }
-        }catch(StringIndexOutOfBoundsException e){
-            LOG.error("IP Anonymization StringIndexOutOfBoundsException: ", e);
-        }*/
+        LOG.info(body.toString());
+        Map<String,String> attributes = body
+            .getJsonObject("attributes")
+            .getMap()
+            .entrySet()
+            .stream()
+            .filter(entry -> entry.getValue() instanceof String)
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> (String)e.getValue()));
         
         try {
             PubsubMessage pubsubMessage = PubsubMessage.newBuilder()
 			    .putAllAttributes(
                     ImmutableMap.<String, String>builder()
-                        //.putAll(headers)
                         .put("timestamp", Instant.now().toString())
-                        .put("source", topic)
+                        .put("topic", topic)
                         .put("uuid", uuid)
+                        .putAll(attributes)
                         .build()
                     )
-                    .setData(ByteString.copyFromUtf8(payload))
+                    .setData(ByteString.copyFromUtf8(body.getJsonObject("data").toString()))
                 .build();
             ApiFuture<String> topicFuture = publisherCache.get(topic).publish(pubsubMessage);
             ApiFuture<String> backupFuture = publisherCache.get(backupTopic).publish(pubsubMessage);

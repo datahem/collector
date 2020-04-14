@@ -72,9 +72,11 @@ public class HttpServerVerticle extends AbstractVerticle {
     public static final String CONFIG_HTTP_SERVER_PORT = "http.server.port";
     public static final String CONFIG_PUBSUB_QUEUE = "pubsub.queue";
     private PubsubService pubsubService;
+    /*  
     private final static byte[] trackingGif = { 0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x1, 0x0, 0x1, 0x0, (byte) 0x80, 0x0, 0x0,
             (byte) 0xff, (byte) 0xff, (byte) 0xff, 0x0, 0x0, 0x0, 0x2c, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x1, 0x0,
             0x0, 0x2, 0x2, 0x44, 0x1, 0x0, 0x3b };
+    */
 
     @Override
     public void start(Promise<Void> promise) throws Exception {
@@ -106,12 +108,13 @@ public class HttpServerVerticle extends AbstractVerticle {
                 .allowedHeaders(allowedHeaders)
                 .allowedMethods(allowedMethods));
 
+/*
         apiRouter
             .get("/topic/:id")
             .produces("text/*")
             .produces("image/*")
             .handler(this::apiGet);
-        
+*/        
         apiRouter
             .get("/headers")
             .produces("application/json")
@@ -156,7 +159,7 @@ public class HttpServerVerticle extends AbstractVerticle {
         headers.forEach((k,v)->{
             j.put(k,v);
         });
-        LOG.info("Headers as json: " + j.toString());
+        //LOG.info("Headers as json: " + j.toString());
         context
             .response()
                 .setStatusCode(200)
@@ -169,16 +172,16 @@ public class HttpServerVerticle extends AbstractVerticle {
         }
     }
 
-     private void apiKeepAlive(RoutingContext context) {
+    private void apiKeepAlive(RoutingContext context) {
         context.response().setStatusCode(204).end();
     }
 
     private void apiCookie(RoutingContext context) {
         try{
             JsonArray cookies = context.getBodyAsJsonArray();
-            LOG.info("cookies: " + cookies.toString());
+            //LOG.info("cookies: " + cookies.toString());
             Map<String, Cookie> cookieMap = context.cookieMap();
-            LOG.info("cookieMap: " + cookieMap.toString());
+            //LOG.info("cookieMap: " + cookieMap.toString());
             cookies.forEach(object -> {
                 JsonObject cookie = (JsonObject) object;
                 if(cookie.containsKey("name")){
@@ -207,32 +210,10 @@ public class HttpServerVerticle extends AbstractVerticle {
                 context.fail(reply.cause());
             }
         };
-        pubsubService.publishMessage(getPayload(context), topic, handler);
+        LOG.info(context.getBodyAsString());
+        pubsubService.publishMessage(context.getBodyAsJson(), topic, handler);
     }
 
-    private void apiGet(RoutingContext context) {
-        String topic = String.valueOf(context.request().getParam("id"));
-        
-        Handler<AsyncResult<Void>> handler = reply -> {
-            if (reply.succeeded()) {
-                if(context.getAcceptableContentType().equals("image/*")){
-                    context.response()
-                    .putHeader("content-type", "image/gif")
-                    .setChunked(true)
-                    .write(Buffer.buffer(trackingGif))
-                    .putHeader("content-length", "trackingGif.length")
-                    .setStatusCode(200)
-                    .end();
-                }else{
-                    context.response().setStatusCode(204).end();
-                }
-            } else {
-                LOG.info("apiGet handler reply fail: ", reply.cause());
-                context.fail(reply.cause());
-            }
-        };
-        pubsubService.publishMessage(getPayload(context), topic, handler);
-    }
 
     private Map<String,String> getHeadersAsMap(MultiMap headersMultiMap){
         return headersMultiMap
@@ -242,12 +223,15 @@ public class HttpServerVerticle extends AbstractVerticle {
             .collect(HashMap::new, (m,v)->m.put(v[0].toLowerCase(), v[1]), HashMap::putAll);
     }
 
+/*    
     private String getPayload(RoutingContext context){
         Map<String,String> headersMap = anonymizeIp(getHeadersAsMap(context.request().headers()));
         JsonObject headers = new JsonObject();
         headersMap.forEach((k,v)->{
             headers.put(k,v);
         });
+        JsonObject body = context.getBodyAsJsonObject();
+
         JsonObject payload = new JsonObject();
         payload
             .put("body", context.getBodyAsString())
@@ -274,5 +258,6 @@ public class HttpServerVerticle extends AbstractVerticle {
         }
         return headers;
     }
+    */
 
 }
